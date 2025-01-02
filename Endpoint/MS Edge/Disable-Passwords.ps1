@@ -17,7 +17,7 @@ Write-Host "Disabling Edge password sync via registry for all users."
 Set-ItemProperty -Path $RegistryPath -Name $RegistryValueName -Value $RegistryValueData -Type String
 
 # Define the backup directory path
-$BackupRootDir = 'C:\JMW-Deploy\Edge'
+$BackupRootDir = 'C:\Intune-Deploy\Edge'
 
 # Create the root backup directory if it doesn't exist
 if (-not (Test-Path -Path $BackupRootDir)) {
