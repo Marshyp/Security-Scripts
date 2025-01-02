@@ -8,7 +8,7 @@ It is advised to deploy from something like intune or even Live response library
 **Please ensure that all scripts are tested in a Sandbox environment prior to deployment**
 Caution: Some scripts **may** brick your environment, review carefully 
 
-### // Worthy Notes \\
+### Noteworthy: 
 
 - Some scripts may require to be ran in Admin context.
 - Scripts are not signed! 
