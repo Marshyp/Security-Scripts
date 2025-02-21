@@ -1,0 +1,8 @@
+AuditLogs
+| where ActivityDisplayName == "Update user"
+| where TargetResources[0].modifiedProperties has "accountEnabled" and TargetResources[0].modifiedProperties has "True"
+| where parse_json(tostring(parse_json(tostring(TargetResources[0].modifiedProperties))[0].newValue))[0] != false
+| extend EnabledDateTime = TimeGenerated
+| extend ReEnabledAccount = TargetResources[0].userPrincipalName
+| project EnabledDateTime, ReEnabledAccount
+| order by EnabledDateTime desc
