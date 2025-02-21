@@ -1,0 +1,4 @@
+SigninLogs
+ | where Identity == "YourBreakGlassUPN"
+ | extend IPCustomEntity = IPAddress
+ | extend AccountCustomEntity = UserPrincipalName
