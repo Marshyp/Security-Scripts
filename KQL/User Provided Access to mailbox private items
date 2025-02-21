@@ -1,0 +1,4 @@
+OfficeActivity
+| where Operation contains "Add-MailboxFolderPermission"
+| where parse_json(Parameters)[0].Name == "SharingPermissionFlags"
+| project TimeGenerated, Actor=UserKey, TargettedMailbox=OfficeObjectId, UserProvidedAccess=parse_json(Parameters)[2].Value, ClientIP
