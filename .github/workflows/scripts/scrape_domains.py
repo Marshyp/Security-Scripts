@@ -26,7 +26,6 @@ os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 
 SEARCH_ENGINE = "https://www.bing.com/search?q="  # Using Bing as an example
 
-
 def fetch_domains_from_search():
     domain_lists = {category: [] for category in CATEGORIES}
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -41,10 +40,13 @@ def fetch_domains_from_search():
             soup = BeautifulSoup(response.text, 'html.parser')
             
             for link in soup.find_all('a', href=True):
-                match = re.search(r'https?://([^/]+)/', link['href'])
-                if match:
-                    domain = match.group(1)
-                    domain_lists[category].append(domain)
+                href = link['href']
+                # Check if the href contains any of the keywords
+                if any(keyword in href for keyword in keywords):
+                    match = re.search(r'https?://([^/]+)/', href)
+                    if match:
+                        domain = match.group(1)
+                        domain_lists[category].append(domain)
             
             time.sleep(3)  # Delay to avoid rate limits
         except Exception as e:
@@ -53,7 +55,6 @@ def fetch_domains_from_search():
                 f.write(error_msg)
     
     return domain_lists
-
 
 def save_to_csv(domain_lists):
     for category, domains in domain_lists.items():
@@ -77,11 +78,9 @@ def save_to_csv(domain_lists):
             csv_filename = filename if i == 0 else filename.replace(".csv", f"_{i+1}.csv")
             df.to_csv(csv_filename, index=False)
 
-
 def main():
     domain_lists = fetch_domains_from_search()
     save_to_csv(domain_lists)
-
 
 if __name__ == "__main__":
     main()
