@@ -32,22 +32,53 @@ jobs:
 
       - name: Commit and push changes
         run: |
+          # Set Git configuration
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Fetch the latest changes from the remote
+          git fetch origin
+
+          # Checkout a new branch for updates
           git checkout -b update-domain-lists
+
+          # Stage changes
           git add Defender/IOCs/*.csv Defender/IOCs/error-log/*
           git commit -m "Update domain lists and error logs"
-          git push https://${{ secrets.PAT_TOKEN }}@github.com/Marshyp/Security-Scripts.git update-domain-lists
+
+          # Attempt to rebase with the latest changes if the branch exists
+          if git show-ref --verify --quiet refs/remotes/origin/main; then
+            if ! git rebase origin/main; then
+              echo "Rebase conflicts occurred. Please resolve them manually."
+              exit 1
+            fi
+          else
+            echo "No existing remote branch 'main'. Skipping rebase."
+          fi
+
+          # Push the new branch to the remote
+          if ! git push --set-upstream https://${{ secrets.PAT_TOKEN }}@github.com/Marshyp/Security-Scripts.git update-domain-lists; then
+            echo "Push failed, trying to fetch and rebase again."
+            git fetch origin
+            if git show-ref --verify --quiet refs/remotes/origin/main; then
+              if ! git rebase origin/main; then
+                echo "Second rebase failed. Please resolve manually."
+                exit 1
+              fi
+            else
+              echo "No existing remote branch 'main'. Skipping rebase."
+            fi
+            if ! git push --set-upstream https://${{ secrets.PAT_TOKEN }}@github.com/Marshyp/Security-Scripts.git update-domain-lists; then
+              echo "Second push failed. Please resolve manually."
+              exit 1
+            fi
+          fi
         continue-on-error: true
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          branch: update-domain-lists
-          title: "Update domain lists"
-          body: "Automated update of domain lists and error logs."
-          commit-message: "Update domain lists and logs"
-          delete-branch: true
-          author: "MarshyP <130765345+Marshyp@users.noreply.github.com>"
+        run: |
+          curl -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+              -X POST \
+              -d '{"title": "Update domain lists", "head": "update-domain-lists", "base": "main"}' \
+              https://api.github.com/repos/${{ github.repository }}/pulls
 
