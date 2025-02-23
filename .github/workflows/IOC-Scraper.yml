@@ -43,4 +43,4 @@ jobs:
           body: "Automated update of domain lists and error logs."
           commit-message: "Update domain lists and logs"
           delete-branch: true
-          author: "MarshyP <your-email@example.com>"
+          author: "MarshyP <130765345+Marshyp@users.noreply.github.com>"
