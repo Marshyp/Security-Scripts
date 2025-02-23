@@ -20,28 +20,28 @@ jobs:
       - name: Download Software
         id: download
         run: |
-          download_link="${{ github.event.inputs.download_link }}"
-          software_name=$(basename "$download_link" .exe) # Adjust if the extension is different
-          Invoke-WebRequest -Uri "$download_link" -OutFile "$software_name.exe"
+          $download_link = "${{ github.event.inputs.download_link }}"
+          $software_name = [System.IO.Path]::GetFileNameWithoutExtension($download_link) # Adjust if the extension is different
+          Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
           echo "software_name=${software_name}" >> $GITHUB_ENV
 
       - name: Determine Certificate Name
         id: cert_name
         run: |
-          if [ -z "${{ github.event.inputs.certificate_name }}" ]; then
+          if (-not ${{ github.event.inputs.certificate_name }}) {
             # Use extracted software name if no custom name is provided
             echo "certificate_name=${{ env.software_name }}" >> $GITHUB_ENV
-          else
+          } else {
             echo "certificate_name=${{ github.event.inputs.certificate_name }}" >> $GITHUB_ENV
-          fi
+          }
 
       - name: Extract Signing Certificate
         run: |
-          $certificate_name="${{ env.certificate_name }}.cer"
+          $certificate_name = "${{ env.certificate_name }}.cer"
           # Extract the signing certificate using signtool
-          signtool verify /pa "${{ env.software_name }}.exe" > "${certificate_name}" # Adjust command as necessary
+          signtool verify /pa "${{ env.software_name }}.exe" > "$certificate_name" # Adjust command as necessary
           mkdir -p Certificates
-          Move-Item "${certificate_name}" "Certificates/${certificate_name}"
+          Move-Item "$certificate_name" "Certificates/$certificate_name"
 
       - name: Update README.md
         run: |

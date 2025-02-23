@@ -20,7 +20,7 @@ jobs:
             $current_version = signtool verify /pa "$cert" | Select-String -Pattern "Version" | ForEach-Object { $_.ToString().Split(" ")[-1] } # Adjust as necessary
             # Assuming you have logic to find the download link based on the software name
             $download_link = "URL_FOR_$software_name" # Placeholder for actual download logic
-            Invoke-WebRequest -Uri "$download_link" -OutFile "${software_name}.exe"
+            Invoke-WebRequest -Uri $download_link -OutFile "${software_name}.exe"
             $new_version = signtool verify /pa "${software_name}.exe" | Select-String -Pattern "Version" | ForEach-Object { $_.ToString().Split(" ")[-1] } # Adjust as necessary
 
             if ($current_version -ne $new_version) {
