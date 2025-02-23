@@ -17,40 +17,45 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
+      - name: Install Windows SDK for signtool
+        run: |
+          choco install windows-sdk-10-version-2004-all -y
+          echo "C:\Program Files (x86)\Windows Kits\10\bin\x64" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
       - name: Download Software
         id: download
+        shell: powershell
         run: |
           $download_link = "${{ github.event.inputs.download_link }}"
-          $software_name = [System.IO.Path]::GetFileNameWithoutExtension($download_link) # Adjust if the extension is different
+          $software_name = "${{ github.event.inputs.certificate_name }}"
           Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
-          echo "software_name=${software_name}" >> $GITHUB_ENV
+          echo "SOFTWARE_NAME=$software_name" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - name: Determine Certificate Name
         id: cert_name
+        shell: powershell
         run: |
-          $certificate_name = "${{ github.event.inputs.certificate_name }}"
-          if (-not [string]::IsNullOrWhiteSpace($certificate_name)) {
-            # Use provided certificate name if it exists
-            echo "certificate_name=${certificate_name}" >> $GITHUB_ENV
+          $cert_name = "${{ github.event.inputs.certificate_name }}"
+          if (-not [string]::IsNullOrWhiteSpace($cert_name)) {
+            echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
           } else {
-            # Use extracted software name if no custom name is provided
-            echo "certificate_name=${{ env.software_name }}" >> $GITHUB_ENV
+            echo "CERTIFICATE_NAME=${{ env.SOFTWARE_NAME }}.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
           }
 
       - name: Extract Signing Certificate
+        shell: powershell
         run: |
-          $certificate_name = "${{ env.certificate_name }}.cer"
-          # Extract the signing certificate using signtool
-          signtool verify /pa "${{ env.software_name }}.exe" > "$certificate_name" # Adjust command as necessary
-          mkdir -p Certificates
-          Move-Item "$certificate_name" "Certificates/$certificate_name"
+          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
+          mkdir -Force Certificates
+          & "C:\Program Files (x86)\Windows Kits\10\bin\x64\signtool.exe" verify /pa "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output"
 
       - name: Update README.md
+        shell: powershell
         run: |
-          Add-Content README.md "Last certificate extracted on: $(Get-Date -Format 'yyyy-MM-dd')"
-          Add-Content README.md "Updated software: ${{ env.software_name }}"
+          $date = Get-Date -Format "yyyy-MM-dd"
+          (Get-Content README.md) -replace 'Last certificate extracted on: .*', "Last certificate extracted on: $date" | Set-Content README.md
           git config --local user.name "github-actions"
           git config --local user.email "action@github.com"
           git add README.md
-          git commit -m "Update README.md with last extraction date"
+          git commit -m "Updated README with last extraction date"
           git push
