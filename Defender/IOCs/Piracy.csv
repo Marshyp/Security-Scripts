@@ -1,0 +1,2 @@
+IndicatorType,IndicatorValue,ExpirationTime,Action,Severity,Title,Description,RecommendedActions,RbacGroups,Category,MitreTechniques,GenerateAlert
+DomainName,support.google.com,,Block,,Potentially unsanctioned Piracy,Blocked by MarshyP,,,Piracy,,FALSE
