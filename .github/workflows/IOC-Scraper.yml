@@ -23,7 +23,7 @@ jobs:
           pip install requests beautifulsoup4 pandas
 
       - name: Run scraper script
-        run: python scripts/scrape_domains.py
+        run: python .github/workflows/scripts/scrape_domains.py
 
       - name: Commit and push changes
         run: |
