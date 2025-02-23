@@ -12,7 +12,7 @@ on:
 
 jobs:
   extract_certificate:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
         run: |
           download_link="${{ github.event.inputs.download_link }}"
           software_name=$(basename "$download_link" .exe) # Adjust if the extension is different
-          curl -L -o "$software_name.exe" "$download_link"
+          Invoke-WebRequest -Uri "$download_link" -OutFile "$software_name.exe"
           echo "software_name=${software_name}" >> $GITHUB_ENV
 
       - name: Determine Certificate Name
@@ -37,16 +37,16 @@ jobs:
 
       - name: Extract Signing Certificate
         run: |
-          certificate_name="${{ env.certificate_name }}.cer"
-          # Extract the signing certificate (use signtool or appropriate method)
+          $certificate_name="${{ env.certificate_name }}.cer"
+          # Extract the signing certificate using signtool
           signtool verify /pa "${{ env.software_name }}.exe" > "${certificate_name}" # Adjust command as necessary
           mkdir -p Certificates
-          mv "${certificate_name}" "Certificates/${certificate_name}"
+          Move-Item "${certificate_name}" "Certificates/${certificate_name}"
 
       - name: Update README.md
         run: |
-          echo "Last certificate extracted on: $(date '+%Y-%m-%d')" >> README.md
-          echo "Updated software: ${{ env.software_name }}" >> README.md
+          Add-Content README.md "Last certificate extracted on: $(Get-Date -Format 'yyyy-MM-dd')"
+          Add-Content README.md "Updated software: ${{ env.software_name }}"
           git config --local user.name "github-actions"
           git config --local user.email "action@github.com"
           git add README.md
