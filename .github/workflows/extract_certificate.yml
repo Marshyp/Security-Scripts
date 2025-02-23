@@ -28,11 +28,13 @@ jobs:
       - name: Determine Certificate Name
         id: cert_name
         run: |
-          if (-not ${{ github.event.inputs.certificate_name }}) {
+          $certificate_name = "${{ github.event.inputs.certificate_name }}"
+          if (-not [string]::IsNullOrWhiteSpace($certificate_name)) {
+            # Use provided certificate name if it exists
+            echo "certificate_name=${certificate_name}" >> $GITHUB_ENV
+          } else {
             # Use extracted software name if no custom name is provided
             echo "certificate_name=${{ env.software_name }}" >> $GITHUB_ENV
-          } else {
-            echo "certificate_name=${{ github.event.inputs.certificate_name }}" >> $GITHUB_ENV
           }
 
       - name: Extract Signing Certificate
