@@ -24,19 +24,8 @@ ERROR_LOG_DIR = "Defender/IOCs/error-log"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 
-SEARCH_ENGINE = "https://www.google.com/search?q="  # Using Google as the search engine
+SEARCH_ENGINE = "https://www.google.com/search?q="  # Move to Google because Bing is rubbish
 
-def fetch_final_domain(url):
-    """Follow redirects to get the final domain."""
-    try:
-        response = requests.get(url, allow_redirects=True, timeout=10)
-        response.raise_for_status()
-        # Extract the final URL
-        final_url = response.url
-        match = re.search(r'https?://([^/]+)/', final_url)
-        return match.group(1) if match else None
-    except Exception as e:
-        return None  # Return None if there's an error
 
 def fetch_domains_from_search():
     domain_lists = {category: [] for category in CATEGORIES}
@@ -51,21 +40,12 @@ def fetch_domains_from_search():
             response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # Look for the right divs that contain search result links
             for link in soup.find_all('a', href=True):
-                href = link['href']
-                
-                # Skip Google redirects and unwanted links
-                if "url?q=" in href:
-                    # Extract the actual URL after "url?q="
-                    actual_url = re.search(r'url\?q=(.*?)(?:&|$)', href)
-                    if actual_url:
-                        actual_url = actual_url.group(1)
-                        # Check if it is a non-Google domain
-                        final_domain = fetch_final_domain(actual_url)
-                        if final_domain and "google.com" not in final_domain:
-                            domain_lists[category].append(final_domain)
-
+                match = re.search(r'https?://([^/]+)/', link['href'])
+                if match:
+                    domain = match.group(1)
+                    domain_lists[category].append(domain)
+            
             time.sleep(3)  # Delay to avoid rate limits
         except Exception as e:
             error_msg = f"{datetime.now()}: Error fetching domains for {category} - {str(e)}\n"
@@ -74,10 +54,11 @@ def fetch_domains_from_search():
     
     return domain_lists
 
+
 def save_to_csv(domain_lists):
     for category, domains in domain_lists.items():
         filename = f"{OUTPUT_DIR}/{category}.csv"
-        chunks = [domains[i:i + MAX_ROWS - 1] for i in range(0, len(domains), MAX_ROWS - 1)]
+        chunks = [domains[i:i+MAX_ROWS-1] for i in range(0, len(domains), MAX_ROWS-1)]
         
         for i, chunk in enumerate(chunks):
             df = pd.DataFrame(chunk, columns=["IndicatorValue"])
@@ -89,16 +70,18 @@ def save_to_csv(domain_lists):
             df.insert(6, "Description", "Blocked by MarshyP")
             df.insert(7, "RecommendedActions", "")
             df.insert(8, "RbacGroups", "")
-            df.insert(9, "Category", "")  # Keep the category column but leave it blank
+            df.insert(9, "Category", category)
             df.insert(10, "MitreTechniques", "")
             df.insert(11, "GenerateAlert", "FALSE")
             
             csv_filename = filename if i == 0 else filename.replace(".csv", f"_{i+1}.csv")
             df.to_csv(csv_filename, index=False)
 
+
 def main():
     domain_lists = fetch_domains_from_search()
     save_to_csv(domain_lists)
+
 
 if __name__ == "__main__":
     main()
