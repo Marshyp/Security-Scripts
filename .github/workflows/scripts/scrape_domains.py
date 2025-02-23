@@ -24,7 +24,8 @@ ERROR_LOG_DIR = "Defender/IOCs/error-log"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 
-SEARCH_ENGINE = "https://www.google.com/search?q="  # Using Google because Bing is rubbish
+SEARCH_ENGINE = "https://www.bing.com/search?q="  # Using Bing as an example
+
 
 def fetch_domains_from_search():
     domain_lists = {category: [] for category in CATEGORIES}
