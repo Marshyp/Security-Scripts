@@ -26,6 +26,17 @@ os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 
 SEARCH_ENGINE = "https://www.bing.com/search?q="  # Using Bing as an example
 
+def fetch_final_domain(url):
+    """Follow redirects to get the final domain."""
+    try:
+        response = requests.get(url, allow_redirects=True, timeout=10)
+        response.raise_for_status()
+        # Extract the final URL
+        final_url = response.url
+        match = re.search(r'https?://([^/]+)/', final_url)
+        return match.group(1) if match else None
+    except Exception as e:
+        return None  # Return None if there's an error
 
 def fetch_domains_from_search():
     domain_lists = {category: [] for category in CATEGORIES}
@@ -41,10 +52,12 @@ def fetch_domains_from_search():
             soup = BeautifulSoup(response.text, 'html.parser')
             
             for link in soup.find_all('a', href=True):
-                match = re.search(r'https?://([^/]+)/', link['href'])
-                if match:
-                    domain = match.group(1)
-                    domain_lists[category].append(domain)
+                href = link['href']
+                # Check if the href contains any of the keywords
+                if any(keyword in href for keyword in keywords):
+                    final_domain = fetch_final_domain(href)
+                    if final_domain:
+                        domain_lists[category].append(final_domain)
             
             time.sleep(3)  # Delay to avoid rate limits
         except Exception as e:
@@ -53,7 +66,6 @@ def fetch_domains_from_search():
                 f.write(error_msg)
     
     return domain_lists
-
 
 def save_to_csv(domain_lists):
     for category, domains in domain_lists.items():
@@ -70,18 +82,16 @@ def save_to_csv(domain_lists):
             df.insert(6, "Description", "Blocked by MarshyP")
             df.insert(7, "RecommendedActions", "")
             df.insert(8, "RbacGroups", "")
-            df.insert(9, "Category", category)
+            df.insert(9, "Category", "") 
             df.insert(10, "MitreTechniques", "")
             df.insert(11, "GenerateAlert", "FALSE")
             
             csv_filename = filename if i == 0 else filename.replace(".csv", f"_{i+1}.csv")
             df.to_csv(csv_filename, index=False)
 
-
 def main():
     domain_lists = fetch_domains_from_search()
     save_to_csv(domain_lists)
-
 
 if __name__ == "__main__":
     main()
