@@ -1,0 +1,54 @@
+name: Certificate Extraction
+
+on:
+  workflow_dispatch:
+    inputs:
+      download_link:
+        description: 'Software download link'
+        required: true
+      certificate_name:
+        description: 'Optional: Name for the certificate (leave blank to use extracted name)'
+        required: false
+
+jobs:
+  extract_certificate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Download Software
+        id: download
+        run: |
+          download_link="${{ github.event.inputs.download_link }}"
+          software_name=$(basename "$download_link" .exe) # Adjust if the extension is different
+          curl -L -o "$software_name.exe" "$download_link"
+          echo "software_name=${software_name}" >> $GITHUB_ENV
+
+      - name: Determine Certificate Name
+        id: cert_name
+        run: |
+          if [ -z "${{ github.event.inputs.certificate_name }}" ]; then
+            # Use extracted software name if no custom name is provided
+            echo "certificate_name=${{ env.software_name }}" >> $GITHUB_ENV
+          else
+            echo "certificate_name=${{ github.event.inputs.certificate_name }}" >> $GITHUB_ENV
+          fi
+
+      - name: Extract Signing Certificate
+        run: |
+          certificate_name="${{ env.certificate_name }}.cer"
+          # Extract the signing certificate (use signtool or appropriate method)
+          signtool verify /pa "${{ env.software_name }}.exe" > "${certificate_name}" # Adjust command as necessary
+          mkdir -p Certificates
+          mv "${certificate_name}" "Certificates/${certificate_name}"
+
+      - name: Update README.md
+        run: |
+          echo "Last certificate extracted on: $(date '+%Y-%m-%d')" >> README.md
+          echo "Updated software: ${{ env.software_name }}" >> README.md
+          git config --local user.name "github-actions"
+          git config --local user.email "action@github.com"
+          git add README.md
+          git commit -m "Update README.md with last extraction date"
+          git push

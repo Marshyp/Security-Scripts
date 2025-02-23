@@ -1,0 +1,40 @@
+name: Scheduled Certificate Update
+
+on:
+  schedule:
+    - cron: '0 9 * * 0' # Runs every Sunday at 09:00
+
+jobs:
+  review_certificates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Review Certificates
+        run: |
+          for cert in Certificates/*.cer; do
+            software_name=$(basename "$cert" .cer)
+            # Logic to download the latest version if the filename is different
+            # Example: Check the properties for the version
+            current_version=$(signtool verify /pa "$cert" | grep -i "Version" | awk '{print $2}') # Adjust as necessary
+            # Assuming you have logic to find the download link based on the software name
+            download_link="URL_FOR_$software_name" # Placeholder for actual download logic
+            curl -L -o "${software_name}.exe" "$download_link"
+            new_version=$(signtool verify /pa "${software_name}.exe" | grep -i "Version" | awk '{print $2}') # Adjust as necessary
+
+            if [ "$current_version" != "$new_version" ]; then
+              echo "Updating certificate for $software_name..."
+              signtool verify /pa "${software_name}.exe" > "Certificates/${software_name}.cer" # Adjust command as necessary
+              echo "Last checked on: $(date '+%Y-%m-%d')" >> README.md
+              echo "Updated software: ${software_name} to version ${new_version}" >> README.md
+            fi
+          done
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.name "github-actions"
+          git config --local user.email "action@github.com"
+          git add README.md
+          git commit -m "Update README.md with latest check date" || echo "No changes to commit"
+          git push
