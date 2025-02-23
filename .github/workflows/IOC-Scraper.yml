@@ -37,7 +37,7 @@ jobs:
           git checkout -b update-domain-lists
           git add Defender/IOCs/*.csv Defender/IOCs/error-log/*
           git commit -m "Update domain lists and error logs"
-          git push https://${{ secrets.PAT_TOKEN }}@github.com/marshyp/Security-Scripts.git update-domain-lists
+          git push https://${{ secrets.PAT_TOKEN }}@github.com/Marshyp/Security-Scripts.git update-domain-lists
         continue-on-error: true
 
       - name: Create Pull Request
