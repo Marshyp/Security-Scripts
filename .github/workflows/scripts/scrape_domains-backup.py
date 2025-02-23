@@ -70,7 +70,7 @@ def save_to_csv(domain_lists):
             df.insert(6, "Description", "Blocked by MarshyP")
             df.insert(7, "RecommendedActions", "")
             df.insert(8, "RbacGroups", "")
-            df.insert(9, "Category", category)
+            df.insert(9, "Category", "")
             df.insert(10, "MitreTechniques", "")
             df.insert(11, "GenerateAlert", "FALSE")
             
