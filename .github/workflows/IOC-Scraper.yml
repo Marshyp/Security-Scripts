@@ -37,15 +37,17 @@ jobs:
           git checkout -b update-domain-lists
           git add Defender/IOCs/*.csv Defender/IOCs/error-log/*
           git commit -m "Update domain lists and error logs"
-          git push origin update-domain-lists
+          git push https://${{ secrets.PAT_TOKEN }}@github.com/<your-username>/<your-repo>.git update-domain-lists
         continue-on-error: true
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           branch: update-domain-lists
           title: "Update domain lists"
           body: "Automated update of domain lists and error logs."
           commit-message: "Update domain lists and logs"
           delete-branch: true
           author: "MarshyP <130765345+Marshyp@users.noreply.github.com>"
+
