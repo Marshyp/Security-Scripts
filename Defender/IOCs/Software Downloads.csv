@@ -1,0 +1,7 @@
+IndicatorType,IndicatorValue,ExpirationTime,Action,Severity,Title,Description,RecommendedActions,RbacGroups,Category,MitreTechniques,GenerateAlert
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned Software Downloads,Blocked by MarshyP,,,Software Downloads,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned Software Downloads,Blocked by MarshyP,,,Software Downloads,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned Software Downloads,Blocked by MarshyP,,,Software Downloads,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned Software Downloads,Blocked by MarshyP,,,Software Downloads,,FALSE
+DomainName,support.microsoft.com,,Block,,Potentially unsanctioned Software Downloads,Blocked by MarshyP,,,Software Downloads,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned Software Downloads,Blocked by MarshyP,,,Software Downloads,,FALSE
