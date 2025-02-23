@@ -1,0 +1,7 @@
+IndicatorType,IndicatorValue,ExpirationTime,Action,Severity,Title,Description,RecommendedActions,RbacGroups,Category,MitreTechniques,GenerateAlert
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned File Sharing,Blocked by MarshyP,,,File Sharing,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned File Sharing,Blocked by MarshyP,,,File Sharing,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned File Sharing,Blocked by MarshyP,,,File Sharing,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned File Sharing,Blocked by MarshyP,,,File Sharing,,FALSE
+DomainName,support.microsoft.com,,Block,,Potentially unsanctioned File Sharing,Blocked by MarshyP,,,File Sharing,,FALSE
+DomainName,go.microsoft.com,,Block,,Potentially unsanctioned File Sharing,Blocked by MarshyP,,,File Sharing,,FALSE
