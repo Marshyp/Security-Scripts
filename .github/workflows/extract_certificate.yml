@@ -17,51 +17,62 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Signtool Manually (Windows SDK)
+      - name: Install Windows SDK Standalone Signing Tools
         shell: powershell
         run: |
           Write-Host "Downloading Windows SDK Standalone Signing Tools..."
-          $sdkInstaller = "$env:Temp\signtool.cab"
-          Invoke-WebRequest -Uri "https://download.microsoft.com/download/2/0/0/200C9856-22B9-4738-AC81-BC8B31834950/standalonesigntool.cab" -OutFile $sdkInstaller
-          
-          Write-Host "Extracting signtool..."
-          Expand-Cab -CabFile $sdkInstaller -DestinationPath "C:\signtool"
-          
-          $signtoolPath = "C:\signtool\signtool.exe"
-          
-          if (Test-Path $signtoolPath) {
-            echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-            Write-Host "signtool.exe is ready to use."
-          } else {
-            Write-Error "Failed to extract signtool.exe!"
-            exit 1
+
+          # Define temp paths
+          $installerPath = "$env:Temp\winsdksetup.exe"
+
+          # Download the latest Windows SDK installer
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2083338" -OutFile $installerPath
+
+          Write-Host "Installing signtool.exe from Windows SDK..."
+
+          # Install only the Signing Tools feature
+          Start-Process -FilePath $installerPath -ArgumentList "/features OptionId.SigningTools /q /norestart /log $env:Temp\winsdk.log" -NoNewWindow -Wait
+
+          # Locate signtool.exe dynamically
+          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Select-Object -ExpandProperty FullName -First 1
+
+          if (-Not $signtoolPath) {
+              Write-Error "signtool.exe not found after installation."
+              exit 1
           }
 
+          Write-Host "signtool.exe installed successfully!"
+          Write-Host "Path: $signtoolPath"
+
+          # Export signtool path for later use
+          echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
       - name: Download Software
+        id: download
         shell: powershell
         run: |
           $download_link = "${{ github.event.inputs.download_link }}"
           $software_name = "${{ github.event.inputs.certificate_name }}"
-          if (-not $software_name) {
-            $software_name = "downloaded_software"
-          }
+
           Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
           echo "SOFTWARE_NAME=$software_name" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - name: Determine Certificate Name
+        id: cert_name
         shell: powershell
         run: |
           $cert_name = "${{ github.event.inputs.certificate_name }}"
-          if (-not $cert_name) {
-            $cert_name = "${{ env.SOFTWARE_NAME }}"
+          if (-not [string]::IsNullOrWhiteSpace($cert_name)) {
+            echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          } else {
+            echo "CERTIFICATE_NAME=${{ env.SOFTWARE_NAME }}.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
           }
-          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - name: Extract Signing Certificate
         shell: powershell
         run: |
-          mkdir -Force Certificates
           $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
+          mkdir -Force Certificates
           & "${{ env.SIGNS_TOOL_PATH }}" verify /pa "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output"
 
       - name: Update README.md
