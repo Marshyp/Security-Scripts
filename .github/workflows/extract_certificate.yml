@@ -7,8 +7,8 @@ on:
         description: 'Software download link'
         required: true
       certificate_name:
-        description: 'Name for the certificate - Please use the software name and version'
-        required: true
+        description: 'Optional: Name for the certificate (leave blank to use extracted name)'
+        required: false
 
 jobs:
   extract_certificate:
@@ -17,26 +17,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Install Windows SDK for signtool
+      - name: Install Signtool Manually (Windows SDK)
         shell: powershell
         run: |
-          Write-Host "Downloading Windows SDK..."
-          $sdkInstaller = "$env:Temp\winsdksetup.exe"
-          Invoke-WebRequest -Uri "https://aka.ms/AAe3y1g" -OutFile $sdkInstaller
+          Write-Host "Downloading Windows SDK Standalone Signing Tools..."
+          $sdkInstaller = "$env:Temp\signtool.cab"
+          Invoke-WebRequest -Uri "https://download.microsoft.com/download/2/0/0/200C9856-22B9-4738-AC81-BC8B31834950/standalonesigntool.cab" -OutFile $sdkInstaller
           
-          Write-Host "Installing Windows SDK..."
-          Start-Process -FilePath $sdkInstaller -ArgumentList "/quiet", "/norestart", "OptionId.SigningTools=1" -Wait
+          Write-Host "Extracting signtool..."
+          Expand-Cab -CabFile $sdkInstaller -DestinationPath "C:\signtool"
           
-          Write-Host "Locating signtool.exe..."
-          $signtoolPath = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Select-Object -First 1 -ExpandProperty FullName
-
-          if (-not $signtoolPath) {
-            Write-Error "signtool.exe not found!"
+          $signtoolPath = "C:\signtool\signtool.exe"
+          
+          if (Test-Path $signtoolPath) {
+            echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+            Write-Host "signtool.exe is ready to use."
+          } else {
+            Write-Error "Failed to extract signtool.exe!"
             exit 1
           }
-          
-          echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-          Write-Host "signtool.exe found at: $signtoolPath"
 
       - name: Download Software
         shell: powershell
