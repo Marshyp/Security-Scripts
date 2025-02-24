@@ -28,7 +28,9 @@ jobs:
           Start-Process -FilePath $sdkInstaller -ArgumentList "/quiet", "/norestart" -Wait
 
           # Locate signtool.exe dynamically (exclude ARM versions)
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Where-Object {$_ -notmatch "arm"} | Select-Object -ExpandProperty FullName -First 1
+          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | 
+            Where-Object { $_.FullName -match "x64|x86" -and $_.FullName -notmatch "arm" } | 
+            Select-Object -ExpandProperty FullName -First 1
 
           if (-not $signtoolPath) {
             Write-Error "signtool.exe not found after installation."
