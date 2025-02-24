@@ -21,30 +21,21 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Downloading Windows SDK Standalone Signing Tools..."
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2302130"
+          $sdkInstaller = "$env:USERPROFILE\Downloads\WindowsSDK.exe"
 
-          # Define temp paths
-          $installerPath = "$env:Temp\winsdksetup.exe"
+          Invoke-WebRequest -Uri $sdkUrl -OutFile $sdkInstaller
+          Start-Process -FilePath $sdkInstaller -ArgumentList "/quiet", "/norestart" -Wait
 
-          # Download the latest Windows SDK installer
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2083338" -OutFile $installerPath
+          # Locate signtool.exe dynamically (exclude ARM versions)
+          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Where-Object {$_ -notmatch "arm"} | Select-Object -ExpandProperty FullName -First 1
 
-          Write-Host "Installing signtool.exe from Windows SDK..."
-
-          # Install only the Signing Tools feature
-          Start-Process -FilePath $installerPath -ArgumentList "/features OptionId.SigningTools /q /norestart /log $env:Temp\winsdk.log" -NoNewWindow -Wait
-
-          # Locate signtool.exe dynamically
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | Select-Object -ExpandProperty FullName -First 1
-
-          if (-Not $signtoolPath) {
-              Write-Error "signtool.exe not found after installation."
-              exit 1
+          if (-not $signtoolPath) {
+            Write-Error "signtool.exe not found after installation."
+            exit 1
           }
 
-          Write-Host "signtool.exe installed successfully!"
-          Write-Host "Path: $signtoolPath"
-
-          # Export signtool path for later use
+          Write-Host "Using signtool.exe at: $signtoolPath"
           echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - name: Download Software
@@ -53,6 +44,7 @@ jobs:
         run: |
           $download_link = "${{ github.event.inputs.download_link }}"
           $software_name = "${{ github.event.inputs.certificate_name }}"
+          if (-not $software_name) { $software_name = "downloaded_software" }
 
           Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
           echo "SOFTWARE_NAME=$software_name" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
@@ -62,11 +54,9 @@ jobs:
         shell: powershell
         run: |
           $cert_name = "${{ github.event.inputs.certificate_name }}"
-          if (-not [string]::IsNullOrWhiteSpace($cert_name)) {
-            echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-          } else {
-            echo "CERTIFICATE_NAME=${{ env.SOFTWARE_NAME }}.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-          }
+          if (-not $cert_name) { $cert_name = "${{ env.SOFTWARE_NAME }}" }
+
+          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - name: Extract Signing Certificate
         shell: powershell
