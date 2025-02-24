@@ -64,7 +64,10 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Checking digital signature details..."
-          & "${{ env.SIGNS_TOOL_PATH }}" sign /detailed "${{ env.SOFTWARE_NAME }}.exe" || Write-Host "Signature not found"
+          $signResult = & "${{ env.SIGNS_TOOL_PATH }}" sign /detailed "${{ env.SOFTWARE_NAME }}.exe"
+          if (-not $signResult) {
+            Write-Host "Signature not found."
+          }
 
       - name: Extract Signing Certificate
         shell: powershell
@@ -74,11 +77,12 @@ jobs:
           Write-Host "Attempting to verify the signature..."
           
           # Use /all to check for multiple signatures
-          & "${{ env.SIGNS_TOOL_PATH }}" verify /all /pa "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output" || (
+          $verifyResult = & "${{ env.SIGNS_TOOL_PATH }}" verify /all /pa "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output"
+          if (-not $verifyResult) {
             Write-Host "Signature verification failed. Running in debug mode for more details..."
             & "${{ env.SIGNS_TOOL_PATH }}" verify /debug /pa "${{ env.SOFTWARE_NAME }}.exe"
             exit 1
-          )
+          }
 
       - name: Update README.md
         shell: powershell
