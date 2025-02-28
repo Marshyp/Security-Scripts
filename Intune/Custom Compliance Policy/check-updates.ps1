@@ -6,21 +6,21 @@ try {
     $CurrentDate = Get-Date
     
     # Set compliance flag
-    $IsCompliant = $true
+    $UpdateCompliance = $true
     
     if ($PendingUpdates.Count -gt 0) {
         foreach ($Update in $PendingUpdates) {
             $UpdateAge = ($CurrentDate - $Update.HotFixID).Days
             
             if ($UpdateAge -ge 10) {
-                $IsCompliant = $false
+                $UpdateCompliance = $false
                 Write-Host "Pending update '$($Update.HotFixID)' is $UpdateAge days old. Marking device as noncompliant."
             }
         }
     }
     
     # Return compliance status (Boolean)
-    if ($IsCompliant) {
+    if ($UpdateCompliance) {
         Write-Host "Device is compliant."
         return $true
     } else {
