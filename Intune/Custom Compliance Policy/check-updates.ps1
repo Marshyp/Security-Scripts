@@ -1,7 +1,3 @@
-﻿param(
-    [string]$ComplianceFile = "$env:ProgramData\Microsoft\IntuneManagementExtension\Logs\Compliance.json"
-)
-
 # Ensure the device checks for updates first
 Write-Host "Checking for outstanding updates..."
 try {
@@ -23,19 +19,15 @@ try {
         }
     }
     
-    # Output result to Intune compliance log
-    $ComplianceResult = @{ "isCompliant" = $IsCompliant }
-    $ComplianceResult | ConvertTo-Json | Set-Content -Path $ComplianceFile
-    
-    # Exit based on compliance
+    # Return compliance status (Boolean)
     if ($IsCompliant) {
         Write-Host "Device is compliant."
-        exit 0
+        return $true
     } else {
         Write-Host "Device is noncompliant."
-        exit 1
+        return $false
     }
 } catch {
     Write-Host "Error checking updates: $_"
-    exit 1
+    return $false
 }
