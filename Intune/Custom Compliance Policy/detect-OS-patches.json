@@ -1,7 +1,7 @@
 {
     "Rules": [
         {
-            "SettingName": "PendingUpdatesCheck",
+            "SettingName": "UpdateCompliance",
             "Operator": "IsEquals",
             "DataType": "Boolean",
             "Operand": "true",
