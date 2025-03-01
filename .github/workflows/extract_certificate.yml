@@ -1,123 +1,78 @@
-name: Certificate Extraction
+name: Code Signing & Verification
 
 on:
-  workflow_dispatch:
-    inputs:
-      download_link:
-        description: 'Software download link'
-        required: true
-      certificate_name:
-        description: 'Optional: Name for the certificate (leave blank to use extracted name)'
-        required: false
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  extract_certificate:
+  sign-and-verify:
     runs-on: windows-latest
+
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Cache Windows SDK Signing Tools
-        id: cache-sdk
-        uses: actions/cache@v3
-        with:
-          path: C:\Program Files (x86)\Windows Kits\10\bin\
-          key: windows-sdk-signing-tools
-
-      - name: Install Windows SDK Standalone Signing Tools (if not cached)
-        if: steps.cache-sdk.outputs.cache-hit != 'true'
-        shell: powershell
+      - name: Set environment variables
         run: |
-          Write-Host "Downloading Windows SDK Standalone Signing Tools..."
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2302130"
-          $sdkInstaller = "$env:USERPROFILE\Downloads\WindowsSDK.exe"
+          echo "SIGNS_TOOL_PATH=C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x64\signtool.exe" >> $GITHUB_ENV
+          echo "SOFTWARE_NAME=7Zip 64Bit" >> $GITHUB_ENV
+          echo "CERTIFICATE_NAME=7Zip 64Bit.cer" >> $GITHUB_ENV
 
-          Invoke-WebRequest -Uri $sdkUrl -OutFile $sdkInstaller
-          Start-Process -FilePath $sdkInstaller -ArgumentList "/quiet", "/norestart" -Wait
-
-      - name: Locate SignTool
-        shell: powershell
+      - name: Verify downloaded file
+        shell: pwsh
         run: |
-          # Locate signtool.exe dynamically (exclude ARM versions)
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | 
-            Where-Object { $_.FullName -match "x64|x86" -and $_.FullName -notmatch "arm" } | 
-            Select-Object -ExpandProperty FullName -First 1
+          Write-Host "🔍 Checking if the correct file is being analyzed..."
+          
+          # Resolve the actual file path
+          $softwarePath = (Resolve-Path "${{ env.SOFTWARE_NAME }}.exe").Path
+          Write-Host "File being checked: $softwarePath"
 
-          if (-not $signtoolPath) {
-            Write-Error "signtool.exe not found after installation."
-            exit 1
+          # Ensure the file exists
+          if (!(Test-Path $softwarePath)) {
+              Write-Host "❌ ERROR: File not found at expected path: $softwarePath"
+              exit 1
           }
 
-          Write-Host "Using signtool.exe at: $signtoolPath"
-          echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          # Get file size
+          $size = (Get-Item $softwarePath).Length
+          Write-Host "📏 File size: $size bytes"
 
-      - name: Download Software
-        id: download
-        shell: powershell
+          # Get SHA256 hash of the file
+          $hash = Get-FileHash -Path $softwarePath -Algorithm SHA256
+          Write-Host "🔑 SHA256 Hash: $($hash.Hash)"
+
+      - name: Check digital signature (PowerShell)
+        shell: pwsh
         run: |
-          $download_link = "${{ github.event.inputs.download_link }}"
-          $software_name = "${{ github.event.inputs.certificate_name }}"
-          if (-not $software_name) { $software_name = "downloaded_software" }
-
-          Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
-          echo "SOFTWARE_NAME=$software_name" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-
-      - name: Determine Certificate Name
-        id: cert_name
-        shell: powershell
-        run: |
-          $cert_name = "${{ github.event.inputs.certificate_name }}"
-          if (-not $cert_name) { $cert_name = "${{ env.SOFTWARE_NAME }}" }
-
-          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-
-      - name: Verify Digital Signature
-        shell: powershell
-        run: |
-          Write-Host "Checking if file is signed..."
-          $signature = Get-AuthenticodeSignature "${{ env.SOFTWARE_NAME }}.exe"
+          Write-Host "🔍 Checking if file is signed using PowerShell..."
           
+          $softwarePath = (Resolve-Path "${{ env.SOFTWARE_NAME }}.exe").Path
+          $signature = Get-AuthenticodeSignature -FilePath $softwarePath
+
           if ($signature.Status -eq "Valid") {
-            Write-Host "✅ File is digitally signed."
+              Write-Host "✅ File is digitally signed."
           } elseif ($signature.Status -eq "NotSigned") {
-            Write-Host "❌ No digital signature found in the file!"
-            exit 1
+              Write-Host "❌ No digital signature found in the file!"
+              exit 1
           } else {
-            Write-Host "⚠️ Signature status unknown: $($signature.Status)"
-            exit 1
+              Write-Host "⚠️ Signature status unknown: $($signature.Status)"
+              exit 1
           }
 
-      - name: Extract Signing Certificate
-        shell: powershell
+      - name: Verify signature with SignTool
+        shell: pwsh
         run: |
-          mkdir -Force Certificates
-          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
+          Write-Host "🔍 Verifying digital signature using SignTool..."
           
-          Write-Host "Extracting certificate from signed executable..."
-          & "${{ env.SIGNS_TOOL_PATH }}" verify /pa /all "${{ env.SOFTWARE_NAME }}.exe"
-          & "${{ env.SIGNS_TOOL_PATH }}" cat "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output"
+          $softwarePath = (Resolve-Path "${{ env.SOFTWARE_NAME }}.exe").Path
+          $signToolPath = "${{ env.SIGNS_TOOL_PATH }}"
 
-          if (-not (Test-Path $cert_output)) {
-            Write-Host "⚠️ Failed to extract certificate!"
-            exit 1
+          & "$signToolPath" verify /pa /all "$softwarePath"
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "❌ SignTool verification failed!"
+              exit 1
+          } else {
+              Write-Host "✅ SignTool verification successful."
           }
-
-      - name: Commit Extracted Certificate
-        shell: powershell
-        run: |
-          git config --local user.name "github-actions"
-          git config --local user.email "action@github.com"
-          git add "Certificates/${{ env.CERTIFICATE_NAME }}"
-          git commit -m "Added extracted certificate: ${{ env.CERTIFICATE_NAME }}"
-          git push
-
-      - name: Update README.md
-        shell: powershell
-        run: |
-          $date = Get-Date -Format "yyyy-MM-dd"
-          (Get-Content README.md) -replace 'Last certificate extracted on: .*', "Last certificate extracted on: $date" | Set-Content README.md
-          git config --local user.name "github-actions"
-          git config --local user.email "action@github.com"
-          git add README.md
-          git commit -m "Updated README with last extraction date"
-          git push
