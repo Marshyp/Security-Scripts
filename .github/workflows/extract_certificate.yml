@@ -17,14 +17,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Cache Windows SDK Standalone Signing Tools
+      - name: Cache Windows SDK Signing Tools
         id: cache-sdk
         uses: actions/cache@v3
         with:
-          path: C:\Program Files (x86)\Windows Kits\10\bin
+          path: C:\Program Files (x86)\Windows Kits\10\bin\
           key: windows-sdk-signing-tools
 
-      - name: Install Windows SDK Standalone Signing Tools (if missing)
+      - name: Install Windows SDK Standalone Signing Tools (if not cached)
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         shell: powershell
         run: |
@@ -34,11 +34,11 @@ jobs:
 
           Invoke-WebRequest -Uri $sdkUrl -OutFile $sdkInstaller
           Start-Process -FilePath $sdkInstaller -ArgumentList "/quiet", "/norestart" -Wait
-          Write-Host "SDK Installed"
 
-      - name: Locate signtool.exe
+      - name: Locate SignTool
         shell: powershell
         run: |
+          # Locate signtool.exe dynamically (exclude ARM versions)
           $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | 
             Where-Object { $_.FullName -match "x64|x86" -and $_.FullName -notmatch "arm" } | 
             Select-Object -ExpandProperty FullName -First 1
@@ -74,28 +74,42 @@ jobs:
       - name: Verify Digital Signature
         shell: powershell
         run: |
-          Write-Host "Checking digital signature details..."
-          $verifyResult = & "${{ env.SIGNS_TOOL_PATH }}" verify /pa "${{ env.SOFTWARE_NAME }}.exe" 2>&1
+          Write-Host "Checking if file is signed..."
+          $signature = Get-AuthenticodeSignature "${{ env.SOFTWARE_NAME }}.exe"
           
-          if ($verifyResult -match "No signature found") {
-            Write-Host "No digital signature found in the file!"
+          if ($signature.Status -eq "Valid") {
+            Write-Host "✅ File is digitally signed."
+          } elseif ($signature.Status -eq "NotSigned") {
+            Write-Host "❌ No digital signature found in the file!"
+            exit 1
+          } else {
+            Write-Host "⚠️ Signature status unknown: $($signature.Status)"
             exit 1
           }
 
       - name: Extract Signing Certificate
         shell: powershell
         run: |
-          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
           mkdir -Force Certificates
-          Write-Host "Extracting certificate..."
+          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
+          
+          Write-Host "Extracting certificate from signed executable..."
+          & "${{ env.SIGNS_TOOL_PATH }}" verify /pa /all "${{ env.SOFTWARE_NAME }}.exe"
+          & "${{ env.SIGNS_TOOL_PATH }}" cat "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output"
 
-          # Extract the certificate from the signed executable
-          & certutil -dump "${{ env.SOFTWARE_NAME }}.exe" | Out-File -FilePath "$cert_output"
-
-          if (-not (Test-Path "$cert_output")) {
-            Write-Host "Failed to extract the certificate."
+          if (-not (Test-Path $cert_output)) {
+            Write-Host "⚠️ Failed to extract certificate!"
             exit 1
           }
+
+      - name: Commit Extracted Certificate
+        shell: powershell
+        run: |
+          git config --local user.name "github-actions"
+          git config --local user.email "action@github.com"
+          git add "Certificates/${{ env.CERTIFICATE_NAME }}"
+          git commit -m "Added extracted certificate: ${{ env.CERTIFICATE_NAME }}"
+          git push
 
       - name: Update README.md
         shell: powershell
