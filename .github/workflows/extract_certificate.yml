@@ -49,7 +49,10 @@ jobs:
           }
 
           Write-Host "✅ Using signtool.exe at: $signtoolPath"
-          echo "SIGNS_TOOL_PATH=$($signtoolPath)" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+          
+          # Setting the environment variable properly
+          Write-Output "SIGNS_TOOL_PATH=$signtoolPath" >> $env:GITHUB_ENV
+
 
       - name: Download Software
         id: download
