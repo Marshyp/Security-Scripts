@@ -64,24 +64,26 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Checking digital signature details..."
-          $signResult = & "${{ env.SIGNS_TOOL_PATH }}" sign /detailed "${{ env.SOFTWARE_NAME }}.exe"
-          if (-not $signResult) {
-            Write-Host "Signature not found."
-          }
+          $signResult = & "${{ env.SIGNS_TOOL_PATH }}" verify /pa "${{ env.SOFTWARE_NAME }}.exe"
+          Write-Host "$signResult"
 
       - name: Extract Signing Certificate
         shell: powershell
         run: |
-          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
           mkdir -Force Certificates
-          Write-Host "Attempting to verify the signature..."
+          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
           
-          # Use /all to check for multiple signatures
-          $verifyResult = & "${{ env.SIGNS_TOOL_PATH }}" verify /all /pa "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output"
-          if (-not $verifyResult) {
-            Write-Host "Signature verification failed. Running in debug mode for more details..."
-            & "${{ env.SIGNS_TOOL_PATH }}" verify /debug /pa "${{ env.SOFTWARE_NAME }}.exe"
-            exit 1
+          Write-Host "Verifying signature..."
+          & "${{ env.SIGNS_TOOL_PATH }}" verify /pa "${{ env.SOFTWARE_NAME }}.exe"
+          
+          Write-Host "Extracting certificate..."
+          & certutil -dump "${{ env.SOFTWARE_NAME }}.exe" | Out-File "$cert_output"
+
+          if (-not (Test-Path "$cert_output")) {
+              Write-Host "Certificate extraction failed."
+              exit 1
+          } else {
+              Write-Host "Certificate successfully extracted to $cert_output"
           }
 
       - name: Update README.md
