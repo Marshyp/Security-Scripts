@@ -29,7 +29,9 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Downloading Windows SDK Standalone Signing Tools..." 
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2302130" 
+          $sdkUrl = "https://
+go.microsoft.com
+/fwlink/?linkid=2302130" 
           $sdkInstaller = "$env:USERPROFILE\Downloads\WindowsSDK.exe" 
  
           Invoke-WebRequest -Uri $sdkUrl -OutFile $sdkInstaller 
@@ -49,13 +51,15 @@ jobs:
           } 
  
           Write-Host "✅ Using signtool.exe at: $signtoolPath" 
-          echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -FilePath "$env:GITHUB_ENV" -Append -Encoding utf8
 
       - name: Download Software 
         id: download 
         shell: powershell 
         run: | 
-          $download_link = "${{ github.event.inputs.download_link }}"
+          $download_link = "${{ 
+github.event.inputs.download
+_link }}"
           $software_name = "${{ github.event.inputs.certificate_name }}"
           
           if (-not $software_name) { $software_name = "downloaded_software" }
@@ -70,7 +74,7 @@ jobs:
           
           Write-Host "✅ Download complete: $software_name.exe"
           
-          echo "SOFTWARE_NAME=$software_name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          echo "SOFTWARE_NAME=$software_name" | Out-File -FilePath "$env:GITHUB_ENV" -Append -Encoding utf8
 
       - name: Determine Certificate Name 
         id: cert_name 
@@ -80,7 +84,7 @@ jobs:
           if (-not $cert_name) { $cert_name = "${{ env.SOFTWARE_NAME }}" } 
           
           Write-Host "🔖 Certificate name set to: $cert_name.cer" 
-          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -FilePath "$env:GITHUB_ENV" -Append -Encoding utf8
 
       - name: Verify Digital Signature 
         shell: powershell 
@@ -90,7 +94,7 @@ jobs:
           $signature = Get-AuthenticodeSignature -FilePath $softwarePath 
  
           Write-Host "📝 Signature Status: $($signature.Status)" 
-          Write-Host "🖋️ Issuer: $($signature.SignerCertificate.Issuer)" 
+          Write-Host "🖋️  Issuer: $($signature.SignerCertificate.Issuer)" 
           Write-Host "📅 Valid From: $($signature.SignerCertificate.NotBefore)" 
           Write-Host "📅 Valid Until: $($signature.SignerCertificate.NotAfter)" 
  
@@ -125,8 +129,12 @@ jobs:
         shell: powershell 
         run: | 
           Write-Host "📤 Committing extracted certificate to repository..." 
-          git config --local user.name "github-actions" 
-          git config --local user.email "action@github.com" 
+          git config --local 
+user.name
+ "github-actions" 
+          git config --local 
+user.email
+ "action@github.com" 
           git add "Certificates/${{ env.CERTIFICATE_NAME }}" 
           git commit -m "Added extracted certificate: ${{ env.CERTIFICATE_NAME }}" 
           git push 
@@ -137,8 +145,12 @@ jobs:
           Write-Host "📝 Updating README.md with extraction date..." 
           $date = Get-Date -Format "yyyy-MM-dd" 
           (Get-Content README.md) -replace 'Last certificate extracted on: .*', "Last certificate extracted on: $date" | Set-Content README.md 
-          git config --local user.name "github-actions" 
-          git config --local user.email "action@github.com" 
+          git config --local 
+user.name
+ "github-actions" 
+          git config --local 
+user.email
+ "action@github.com" 
           git add README.md 
           git commit -m "Updated README with last extraction date" 
           git push
