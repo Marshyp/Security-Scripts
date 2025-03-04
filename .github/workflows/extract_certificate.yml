@@ -29,9 +29,7 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Downloading Windows SDK Standalone Signing Tools..." 
-          $sdkUrl = "https://
-go.microsoft.com
-/fwlink/?linkid=2302130" 
+          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2302130" 
           $sdkInstaller = "$env:USERPROFILE\Downloads\WindowsSDK.exe" 
  
           Invoke-WebRequest -Uri $sdkUrl -OutFile $sdkInstaller 
@@ -57,9 +55,7 @@ go.microsoft.com
         id: download 
         shell: powershell 
         run: | 
-          $download_link = "${{ 
-github.event.inputs.download
-_link }}"
+          $download_link = "${{ github.event.inputs.download_link }}"
           $software_name = "${{ github.event.inputs.certificate_name }}"
           
           if (-not $software_name) { $software_name = "downloaded_software" }
@@ -129,12 +125,8 @@ _link }}"
         shell: powershell 
         run: | 
           Write-Host "📤 Committing extracted certificate to repository..." 
-          git config --local 
-user.name
- "github-actions" 
-          git config --local 
-user.email
- "action@github.com" 
+          git config --local user.name "github-actions" 
+          git config --local user.email "action@github.com" 
           git add "Certificates/${{ env.CERTIFICATE_NAME }}" 
           git commit -m "Added extracted certificate: ${{ env.CERTIFICATE_NAME }}" 
           git push 
@@ -145,12 +137,8 @@ user.email
           Write-Host "📝 Updating README.md with extraction date..." 
           $date = Get-Date -Format "yyyy-MM-dd" 
           (Get-Content README.md) -replace 'Last certificate extracted on: .*', "Last certificate extracted on: $date" | Set-Content README.md 
-          git config --local 
-user.name
- "github-actions" 
-          git config --local 
-user.email
- "action@github.com" 
+          git config --local user.name "github-actions" 
+          git config --local user.email "action@github.com" 
           git add README.md 
           git commit -m "Updated README with last extraction date" 
           git push
