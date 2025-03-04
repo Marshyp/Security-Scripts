@@ -31,65 +31,22 @@ jobs:
           Write-Host "Downloading Windows SDK Standalone Signing Tools..."
           $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2302130"
           $sdkInstaller = "$env:USERPROFILE\Downloads\WindowsSDK.exe"
-
           Invoke-WebRequest -Uri $sdkUrl -OutFile $sdkInstaller
           Start-Process -FilePath $sdkInstaller -ArgumentList "/quiet", "/norestart" -Wait
 
-      - name: Locate SignTool
-        shell: powershell
-        run: |
-          Write-Host "🔍 Locating signtool.exe..."
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" | 
-            Where-Object { $_.FullName -match "x64|x86" -and $_.FullName -notmatch "arm" } | 
-            Select-Object -ExpandProperty FullName -First 1
-
-          if (-not $signtoolPath) {
-            Write-Host "❌ ERROR: signtool.exe not found after installation."
-            exit 1
-          }
-
-          Write-Host "✅ Using signtool.exe at: $signtoolPath"
-          
-          # Setting the environment variable properly
-          Write-Output "SIGNS_TOOL_PATH=$signtoolPath" >> $env:GITHUB_ENV
-
-
       - name: Download Software
-        id: download
         shell: powershell
         run: |
           $download_link = "${{ github.event.inputs.download_link }}"
           $software_name = "${{ github.event.inputs.certificate_name }}"
           if (-not $software_name) { $software_name = "downloaded_software" }
-
           Write-Host "📥 Downloading software from: $download_link"
           Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
-
           if (!(Test-Path "$software_name.exe")) {
             Write-Host "❌ ERROR: Download failed or file missing!"
             exit 1
           }
-
-          Write-Host "✅ Download complete: $software_name.exe"
-
-          # File details for debugging
-          $size = (Get-Item "$software_name.exe").Length
-          $hash = Get-FileHash -Path "$software_name.exe" -Algorithm SHA256
-
-          Write-Host "📏 File size: $size bytes"
-          Write-Host "🔑 SHA256 Hash: $($hash.Hash)"
-
           echo "SOFTWARE_NAME=$software_name" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
-
-      - name: Determine Certificate Name
-        id: cert_name
-        shell: powershell
-        run: |
-          $cert_name = "${{ github.event.inputs.certificate_name }}"
-          if (-not $cert_name) { $cert_name = "${{ env.SOFTWARE_NAME }}" }
-
-          Write-Host "🔖 Certificate name set to: $cert_name.cer"
-          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - name: Verify Digital Signature
         shell: powershell
@@ -97,12 +54,6 @@ jobs:
           Write-Host "🔍 Checking digital signature..."
           $softwarePath = "${{ env.SOFTWARE_NAME }}.exe"
           $signature = Get-AuthenticodeSignature -FilePath $softwarePath
-
-          Write-Host "📝 Signature Status: $($signature.Status)"
-          Write-Host "🖋️  Issuer: $($signature.SignerCertificate.Issuer)"
-          Write-Host "📅 Valid From: $($signature.SignerCertificate.NotBefore)"
-          Write-Host "📅 Valid Until: $($signature.SignerCertificate.NotAfter)"
-
           if ($signature.Status -eq "Valid") {
             Write-Host "✅ File is digitally signed."
           } elseif ($signature.Status -eq "NotSigned") {
@@ -117,18 +68,20 @@ jobs:
         shell: powershell
         run: |
           mkdir -Force Certificates
-          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}"
-
+          $cert_output = "Certificates/${{ github.event.inputs.certificate_name }}.cer"
+          $softwarePath = "${{ env.SOFTWARE_NAME }}.exe"
           Write-Host "📂 Extracting certificate from signed executable..."
-          & "${{ env.SIGNS_TOOL_PATH }}" verify /pa /all "${{ env.SOFTWARE_NAME }}.exe"
-          & "${{ env.SIGNS_TOOL_PATH }}" cat "${{ env.SOFTWARE_NAME }}.exe" > "$cert_output"
-
+          $signature = Get-AuthenticodeSignature -FilePath $softwarePath
+          if ($null -eq $signature.SignerCertificate) {
+            Write-Host "❌ ERROR: No certificate found in the file!"
+            exit 1
+          }
+          $signature.SignerCertificate | Export-Certificate -Type CERT -FilePath $cert_output
           if (-not (Test-Path $cert_output)) {
             Write-Host "❌ ERROR: Certificate extraction failed!"
             exit 1
           }
-
-          Write-Host "✅ Certificate extracted: $cert_output"
+          Write-Host "✅ Certificate extracted successfully: $cert_output"
 
       - name: Commit Extracted Certificate
         shell: powershell
@@ -136,8 +89,8 @@ jobs:
           Write-Host "📤 Committing extracted certificate to repository..."
           git config --local user.name "github-actions"
           git config --local user.email "action@github.com"
-          git add "Certificates/${{ env.CERTIFICATE_NAME }}"
-          git commit -m "Added extracted certificate: ${{ env.CERTIFICATE_NAME }}"
+          git add "Certificates/${{ github.event.inputs.certificate_name }}.cer"
+          git commit -m "Added extracted certificate: ${{ github.event.inputs.certificate_name }}.cer"
           git push
 
       - name: Update README.md
