@@ -17,40 +17,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Cache Windows SDK Signing Tools
-        id: cache-sdk
-        uses: actions/cache@v3
-        with:
-          path: C:\Program Files (x86)\Windows Kits\10\bin\
-          key: windows-sdk-signing-tools
-
-      - name: Install Windows SDK Standalone Signing Tools (if not cached)
-        if: steps.cache-sdk.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          Write-Host "Downloading Windows SDK Standalone Signing Tools..." 
-          $sdkUrl = "https://go.microsoft.com/fwlink/?linkid=2302130" 
-          $sdkInstaller = "$env:USERPROFILE\Downloads\WindowsSDK.exe" 
- 
-          Invoke-WebRequest -Uri $sdkUrl -OutFile $sdkInstaller 
-          Start-Process -FilePath $sdkInstaller -ArgumentList "/quiet", "/norestart" -Wait 
- 
-      - name: Locate SignTool 
-        shell: powershell 
-        run: | 
-          Write-Host "🔍 Locating signtool.exe..." 
-          $signtoolPath = Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\bin\" -Recurse -Filter "signtool.exe" |  
-            Where-Object { $_.FullName -match "x64|x86" -and $_.FullName -notmatch "arm" } |  
-            Select-Object -ExpandProperty FullName -First 1 
- 
-          if (-not $signtoolPath) { 
-            Write-Host "❌ ERROR: signtool.exe not found after installation." 
-            exit 1 
-          } 
- 
-          Write-Host "✅ Using signtool.exe at: $signtoolPath" 
-          echo "SIGNS_TOOL_PATH=$signtoolPath" | Out-File -FilePath "$env:GITHUB_ENV" -Append -Encoding utf8
-
       - name: Download Software 
         id: download 
         shell: powershell 
@@ -82,44 +48,29 @@ jobs:
           Write-Host "🔖 Certificate name set to: $cert_name.cer" 
           echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -FilePath "$env:GITHUB_ENV" -Append -Encoding utf8
 
-      - name: Verify Digital Signature 
-        shell: powershell 
-        run: | 
-          Write-Host "🔍 Checking digital signature..." 
-          $softwarePath = "${{ env.SOFTWARE_NAME }}.exe" 
-          $signature = Get-AuthenticodeSignature -FilePath $softwarePath 
- 
-          Write-Host "📝 Signature Status: $($signature.Status)" 
-          Write-Host "🖋️  Issuer: $($signature.SignerCertificate.Issuer)" 
-          Write-Host "📅 Valid From: $($signature.SignerCertificate.NotBefore)" 
-          Write-Host "📅 Valid Until: $($signature.SignerCertificate.NotAfter)" 
- 
-          if ($signature.Status -eq "Valid") { 
-            Write-Host "✅ File is digitally signed." 
-          } elseif ($signature.Status -eq "NotSigned") { 
-            Write-Host "❌ No digital signature found!" 
-            exit 1 
-          } else { 
-            Write-Host "⚠️ Unknown signature status: $($signature.Status)" 
-            exit 1 
-          } 
-
       - name: Extract Signing Certificate 
         shell: powershell 
         run: | 
-          mkdir -Force Certificates 
-          $cert_output = "Certificates/${{ env.CERTIFICATE_NAME }}" 
- 
-          Write-Host "📂 Extracting certificate from signed executable..." 
-          $cert = (Get-AuthenticodeSignature -FilePath "${{ env.SOFTWARE_NAME }}.exe").SignerCertificate
-          Export-Certificate -Cert $cert -FilePath $cert_output -Type CERT
- 
-          if (-not (Test-Path $cert_output)) { 
-            Write-Host "❌ ERROR: Certificate extraction failed!" 
-            exit 1 
-          } 
- 
-          Write-Host "✅ Certificate extracted: $cert_output" 
+          $exePath = "${{ env.SOFTWARE_NAME }}.exe"
+          $certDir = "Certificates"
+          if (-Not (Test-Path $certDir -PathType Container)) {
+              New-Item -ItemType Directory -Path $certDir | Out-Null
+          }
+          $certPath = Join-Path -Path $certDir -ChildPath "${{ env.CERTIFICATE_NAME }}"
+
+          try {
+              $cert = (Get-AuthenticodeSignature -FilePath $exePath).SignerCertificate
+              if ($cert) {
+                  $cert.Export("Cert") | Set-Content -Path $certPath -Encoding Byte
+                  Write-Host "✅ Certificate successfully extracted to: $certPath"
+              } else {
+                  Write-Host "❌ ERROR: No certificate found in the executable."
+                  exit 1
+              }
+          } catch {
+              Write-Host "❌ An error occurred: $_"
+              exit 1
+          }
 
       - name: Commit Extracted Certificate 
         shell: powershell 
