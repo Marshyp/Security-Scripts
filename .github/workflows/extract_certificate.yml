@@ -48,7 +48,7 @@ jobs:
 
       - name: Determine Certificate Name  
         id: cert_name  
-        shell: powershell  
+        shell: pwsh
         run: |  
           $software_name = "${{ steps.download.outputs.SOFTWARE_NAME }}"
           $cert_name = "${{ github.event.inputs.certificate_name }}"
@@ -63,7 +63,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "CERTIFICATE_NAME=$cert_name.cer"
 
       - name: Extract Signing Certificate  
-        shell: powershell  
+        shell: pwsh
         run: |  
           $software_name = "${{ steps.download.outputs.SOFTWARE_NAME }}"
           $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
@@ -92,7 +92,7 @@ jobs:
           } 
 
       - name: Commit Extracted Certificate  
-        shell: powershell  
+        shell: pwsh 
         run: |  
           $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
 
@@ -104,7 +104,7 @@ jobs:
           git push  
 
       - name: Update README.md  
-        shell: powershell  
+        shell: pwsh
         run: |  
           $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
           $date = Get-Date -Format "yyyy-MM-dd"  
