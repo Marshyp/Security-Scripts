@@ -157,7 +157,7 @@ jobs:
           $readmeContent = $lines -join "`n"
       
           # Check if a row for this certificate already exists
-          if ($readmeContent -match "\|.*$certificate_name.*\|") {
+          if ($readmeContent -match "\|.*$certificate_name.*\|") { 
             # Update the existing row with the new date and download link
             $readmeContent = $readmeContent -replace "(\|.*$certificate_name.*\|)", $table_row
           } else {
