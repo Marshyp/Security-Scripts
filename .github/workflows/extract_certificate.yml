@@ -134,10 +134,10 @@ jobs:
             Write-Host "README.md not found in Certificates folder. Creating new file..."
             $header = "# Certificates for Defender blocking`n"
             $horizontal = "---`n"
-            $badge = "![Certificates](https://img.shields.io/badge/Certificates-0-blue)`n"
-            $description = "This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.`n"
-            $tableHeader = "| Date       | Title of certificate | Download link of software |`n"
-            $tableSeparator = "|------------|----------------------|---------------------------|`n"
+            $badge = "![Certificates](https://img.shields.io/badge/Certificates-0-blue)`n `n"
+            $description = "This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.`n `n"
+            $tableHeader = "| Date       | Title of certificate | Download link of software |`n `n"
+            $tableSeparator = "|------------|----------------------|---------------------------|`n `n"
             $initialContent = $header + $horizontal + $badge + $description + $horizontal + $tableHeader + $tableSeparator
             Set-Content -Path $readmePath -Value $initialContent
           }
@@ -152,7 +152,7 @@ jobs:
           # Assume the badge is on the third line
           $lines = $readmeContent -split "`n"
           if ($lines.Count -ge 3) {
-            $lines[2] = "![Certificates](https://img.shields.io/badge/Certificates-$certificateCount-blue)"
+            $lines[2] = "![Certificates](https://img.shields.io/badge/Certificates-$certificateCount-blue)`n `n"
           }
           $readmeContent = $lines -join "`n"
       
