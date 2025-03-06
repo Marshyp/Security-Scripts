@@ -15,3 +15,5 @@ Caution: Some scripts **may** brick your environment, review carefully
 - Write-Host is not applicable in deployment scenarios such as InTune 
 
 All PRs welcomed
+
+| 2025-03-06 | Zoom.cer |
