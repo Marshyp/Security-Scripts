@@ -46,7 +46,41 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "DOWNLOAD_LINK=$downloadLink"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "CERTIFICATE_NAME=$certificateName"
 
+      - name: Check Platform
+        id: check_platform
+        shell: pwsh
+        run: |
+          $download_link = "${{ steps.parse_issue.outputs.DOWNLOAD_LINK }}"
+          Write-Host "Checking platform for download link: $download_link"
+          if ($download_link -imatch "arm64") {
+              Write-Host "Detected ARM64 platform, which is not supported."
+              Add-Content -Path $env:GITHUB_OUTPUT -Value "PLATFORM_SUPPORTED=false"
+          } else {
+              Add-Content -Path $env:GITHUB_OUTPUT -Value "PLATFORM_SUPPORTED=true"
+          }
+
+
+      - name: Unsupported Platform - Comment and Close Issue
+        if: steps.check_platform.outputs.PLATFORM_SUPPORTED == 'false'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "The requested software appears to be for an unsupported platform (ARM64). Please provide a version compatible with x64."
+            });
+            await github.rest.issues.update({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "closed"
+            });
+
       - name: Download Software
+        if: steps.check_platform.outputs.PLATFORM_SUPPORTED == 'true'
         id: download
         shell: pwsh
         run: |
