@@ -1,10 +1,6 @@
 # Certificates for Defender blocking
 
-![Certificates](https://img.shields.io/badge/Certificates-2-blue)
- 
-
-
-![Certificates](https://img.shields.io/badge/Certificates-2-blue)
+![Certificates](https://img.shields.io/badge/Certificates-3-blue)
  
 This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.
 
