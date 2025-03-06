@@ -97,6 +97,11 @@ jobs:
                     Write-Host "❌ ERROR: No certificate found in the executable."
                     exit 1
                 }
+
+              # Remove the downloaded executable to prevent untracked files
+              Remove-Item -Path $exePath -Force
+
+
             } catch {
                 Write-Host "❌ An error occurred: $_"
                 exit 1
