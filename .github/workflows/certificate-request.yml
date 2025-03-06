@@ -40,15 +40,14 @@ jobs:
           # - Replace plus signs with "p"
           # - Replace spaces with underscores
           # - Remove tab characters
-          # - Remove invalid Windows file characters
-          # - Collapse multiple underscores and trim the result
+          # - Remove invalid Windows file characters (e.g. : \ / * ? " < > |)
+          # - Collapse multiple underscores and optionally truncate
           $certificateName = $certificateName -replace "\+", "p" `
                                               -replace " ", "_" `
                                               -replace "\t", "" `
                                               -replace '[:\\/*?"<>|]', ""
-          # Optionally, collapse multiple underscores into one
           $certificateName = $certificateName -replace "_+", "_"
-          # Limit the certificate name to a maximum length (e.g. 50 characters)
+          # Optionally limit the length (e.g., to 50 characters)
           $maxLength = 50
           if ($certificateName.Length -gt $maxLength) {
               $certificateName = $certificateName.Substring(0, $maxLength)
@@ -67,10 +66,12 @@ jobs:
         run: |
           $download_link = "${{ steps.parse_issue.outputs.DOWNLOAD_LINK }}"
           Write-Host "Checking platform for download link: $download_link"
-          if ($download_link -imatch "arm64") {
-              Write-Host "Detected ARM64 platform, which is not supported."
+          # Mark unsupported if the URL indicates ARM64 OR if it indicates x86 (but not x64)
+          if ($download_link -imatch "arm64" -or ($download_link -imatch "x86" -and -not ($download_link -imatch "x64"))) {
+              Write-Host "Detected unsupported platform (ARM64 or x86)."
               Add-Content -Path $env:GITHUB_OUTPUT -Value "PLATFORM_SUPPORTED=false"
           } else {
+              Write-Host "Platform appears supported."
               Add-Content -Path $env:GITHUB_OUTPUT -Value "PLATFORM_SUPPORTED=true"
           }
 
@@ -84,7 +85,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "The requested software appears to be for an unsupported platform (ARM64). Please provide a version compatible with x64."
+              body: "The requested software appears to be for an unsupported platform (ARM64 or x86). Please provide a version compatible with x64."
             });
             await github.rest.issues.update({
               issue_number: context.issue.number,
