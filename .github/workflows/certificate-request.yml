@@ -20,6 +20,9 @@ jobs:
           $body = "${{ github.event.issue.body }}"
           Write-Host "Issue Body: $body"
           
+          # Remove markdown asterisks
+          $body = $body -replace "\*\*", ""
+          
           # Extract the Download Link from the issue body
           if ($body -match "Download Link\s*:\s*(.+)") {
               $downloadLink = $matches[1].Trim()
