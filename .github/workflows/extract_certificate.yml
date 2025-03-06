@@ -123,55 +123,59 @@ jobs:
       - name: Update README.md  
         shell: pwsh
         run: |
-          $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
-          $date = Get-Date -Format "yyyy-MM-dd"
-          $download_link = "${{ github.event.inputs.download_link }}"
-          $table_row = "| $date | $certificate_name | [$download_link]($download_link) |"
-          $readmePath = "Certificates/README.md"
-      
-          # If README.md does not exist in Certificates folder, create it with header, badge, description, and table header
-          if (-not (Test-Path $readmePath)) {
-            Write-Host "README.md not found in Certificates folder. Creating new file..."
-            $header = "# Certificates for Defender blocking`n"
-            $horizontal = "---`n"
-            $badge = "![Certificates](https://img.shields.io/badge/Certificates-0-blue)`n `n"
-            $description = "This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.`n `n"
-            $tableHeader = "| Date       | Title of certificate | Download link of software |`n"
-            $tableSeparator = "|------------|----------------------|---------------------------|`n"
-            $initialContent = $header + $horizontal + $badge + $description + $horizontal + $tableHeader + $tableSeparator
-            Set-Content -Path $readmePath -Value $initialContent
-          }
-      
-          # Read the existing README.md content (as one string)
-          $readmeContent = Get-Content $readmePath -Raw
-      
-          # Update the certificate count badge
-          # Count the number of table rows (skip header and separator)
-          $tableLines = $readmeContent -split "`n" | Where-Object { $_ -match "^\|" }
-          $certificateCount = [Math]::Max(0, $tableLines.Count - 2)
-          # Assume the badge is on the third line
-          $lines = $readmeContent -split "`n"
-          if ($lines.Count -ge 3) {
-            $lines[2] = "![Certificates](https://img.shields.io/badge/Certificates-$certificateCount-blue)`n `n"
-          }
-          $readmeContent = $lines -join "`n"
-      
-          # Check if a row for this certificate already exists
-          if ($readmeContent -match "\|.*$certificate_name.*\|") { 
-            # Update the existing row with the new date and download link
-            $readmeContent = $readmeContent -replace "(\|.*$certificate_name.*\|)", $table_row
-          } else {
-            # Append the new row to the end of the table
-            $readmeContent += $table_row
-          }
-      
-          # Write the updated content back to the README.md file in the Certificates folder
-          Set-Content -Path $readmePath -Value $readmeContent
-      
-          # Stage and commit the changes
-          git config --local user.name "github-actions"
-          git config --local user.email "action@github.com"
-          git add $readmePath
-          git commit -m "Updated Certificates README with last extraction details" || Write-Host "Nothing to commit for README"
-          git push
+            $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
+            $date = Get-Date -Format "yyyy-MM-dd"
+            $download_link = "${{ github.event.inputs.download_link }}"
+            $table_row = "| $date | $certificate_name | [$download_link]($download_link) |"
+            $readmePath = "Certificates/README.md"
+        
+            # If README.md does not exist in Certificates folder, create it with header, badge, description, and table header
+            if (-not (Test-Path $readmePath)) {
+              Write-Host "README.md not found in Certificates folder. Creating new file..."
+              $header = "# Certificates for Defender blocking`n"
+              $horizontal = "---`n"
+              $badge = "![Certificates](https://img.shields.io/badge/Certificates-0-blue)`n`n"
+              $description = "This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.`n`n"
+              $tableHeader = "| Date       | Title of certificate | Download link of software |`n"
+              $tableSeparator = "|------------|----------------------|---------------------------|`n"
+              $initialContent = $header + $horizontal + $badge + $description + $horizontal + $tableHeader + $tableSeparator
+              Set-Content -Path $readmePath -Value $initialContent
+            }
+            
+            # Read the existing README.md content (as one string)
+            $readmeContent = Get-Content $readmePath -Raw
+        
+            # Update the table: if a row for this certificate exists, update it; otherwise, append it.
+            if ($readmeContent -match "\|.*$certificate_name.*\|") { 
+              $readmeContent = $readmeContent -replace "(\|.*$certificate_name.*\|)", $table_row
+            } else {
+              # Ensure there's a newline before appending if needed.
+              if ($readmeContent[-1] -ne "`n") {
+                 $readmeContent += "`n"
+              }
+              $readmeContent += $table_row + "`n"
+            }
+            
+            # Now recalc and update the certificate count badge.
+            # Count the table rows (lines starting with "|" in the table section)
+            $tableLines = $readmeContent -split "`n" | Where-Object { $_ -match "^\|" }
+            # We subtract 2 for the header and separator lines.
+            $certificateCount = [Math]::Max(0, $tableLines.Count - 2)
+            # Update the badge line, which we assume is line index 2 (0-based index)
+            $lines = $readmeContent -split "`n"
+            if ($lines.Count -ge 3) {
+              $lines[2] = "![Certificates](https://img.shields.io/badge/Certificates-$certificateCount-blue)"
+            }
+            $readmeContent = $lines -join "`n"
+            
+            # Write the updated content back to the README.md file in the Certificates folder
+            Set-Content -Path $readmePath -Value $readmeContent
+            
+            # Stage and commit the changes
+            git config --local user.name "github-actions"
+            git config --local user.email "action@github.com"
+            git add $readmePath
+            git commit -m "Updated Certificates README with last extraction details" || Write-Host "Nothing to commit for README"
+            git push
+        
       
