@@ -22,21 +22,21 @@ jobs:
         shell: powershell  
         run: |  
           # Ensure the download_link is on a single line
-          $download_link = "${{ github.event.inputs.download_link }}"  
+          $download_link = ${{ github.event.inputs.download_link }}  
           
           # Ensure the link is valid and doesn't contain newlines (trim any extra spaces or newlines)
           $download_link = $download_link -replace "`r`n", "" -replace "`n", ""  # Removes newlines
           
-          $software_name = "${{ github.event.inputs.certificate_name }}" 
+          $software_name = ${{ github.event.inputs.certificate_name }}
            
           if (-not $software_name) { 
             $software_name = "downloaded_software" 
           }
            
           Write-Host "📥 Downloading software from: $download_link" 
-          Invoke-WebRequest -Uri "$download_link" -OutFile "$software_name.exe" 
+          Invoke-WebRequest -Uri $download_link -OutFile $software_name.exe"
            
-          if (!(Test-Path "$software_name.exe")) {  
+          if (!(Test-Path $software_name.exe)) {  
             Write-Host "❌ ERROR: Download failed or file missing!"  
             exit 1  
           } 
@@ -60,12 +60,12 @@ jobs:
       - name: Extract Signing Certificate  
         shell: powershell  
         run: |  
-          $exePath = "${{ env.SOFTWARE_NAME }}.exe" 
+          $exePath = ${{ env.SOFTWARE_NAME }}.exe 
           $certDir = "Certificates" 
           if (-Not (Test-Path $certDir -PathType Container)) { 
               New-Item -ItemType Directory -Path $certDir | Out-Null 
           } 
-          $certPath = Join-Path -Path $certDir -ChildPath "${{ env.CERTIFICATE_NAME }}" 
+          $certPath = Join-Path -Path $certDir -ChildPath ${{ env.CERTIFICATE_NAME }}
 
           try { 
               $cert = (Get-AuthenticodeSignature -FilePath $exePath).SignerCertificate 
@@ -96,7 +96,7 @@ jobs:
         run: |  
           Write-Host "📝 Updating README.md with certificate extraction details..."  
           $date = Get-Date -Format "yyyy-MM-dd"  
-          $certificate_name = "${{ env.CERTIFICATE_NAME }}"  
+          $certificate_name = ${{ env.CERTIFICATE_NAME }} 
           $table_row = "| $date | $certificate_name |"  
 
           # Read the existing README.md content
