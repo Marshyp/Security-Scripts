@@ -15,3 +15,4 @@ This repository is provided by Philip Marsh to allow users to download certifica
 | 2025-03-06 | Jabra_Direct.cer | [https://jabraxpressonlineprdstor.blob.core.windows.net/jdo/JabraDirectSetup.exe](https://jabraxpressonlineprdstor.blob.core.windows.net/jdo/JabraDirectSetup.exe) |
 | 2025-03-06 | GIMP_2.10.38_(2024-05-02).cer | [https://download.gimp.org/gimp/v2.10/windows/gimp-2.10.38-setup-1.exe](https://download.gimp.org/gimp/v2.10/windows/gimp-2.10.38-setup-1.exe) |
 | 2025-03-06 | Calibre_64-bit_Version_7.26.0.cer | [https://github.com/kovidgoyal/calibre/releases/download/v7.26.0/calibre-64bit-7.26.0.msi](https://github.com/kovidgoyal/calibre/releases/download/v7.26.0/calibre-64bit-7.26.0.msi) |
+| 2025-03-06 | Discord.cer | [https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64](https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64) |
