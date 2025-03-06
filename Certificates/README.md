@@ -4,7 +4,7 @@
  
 
 
-This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.
+### This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.
 ---
 
 | Date       | Title of certificate | Download link of software |
