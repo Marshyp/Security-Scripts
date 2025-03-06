@@ -193,8 +193,8 @@ jobs:
               Write-Host "README.md not found in Certificates folder. Creating new file..."
               $header = "# Certificates for Defender blocking`n"
               $horizontal = "---`n"
-              $badge = "![Certificates](https://img.shields.io/badge/Certificates-0-blue)`n`n"
-              $description = "This repository is provided to allow users to extract and store certificates." + "`n`n"
+              $badge = "![Certificates](https://img.shields.io/badge/Certificates-0-blue)`n"
+              $description = "This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.`n"
               $tableHeader = "| Date       | Title of certificate | Download link of software |`n"
               $tableSeparator = "|------------|----------------------|---------------------------|`n"
               $initialContent = $header + $horizontal + $badge + $description + $horizontal + $tableHeader + $tableSeparator
@@ -206,17 +206,21 @@ jobs:
             if ($readmeContent -match "\|.*$certificate_name\.cer.*\|") {
               $readmeContent = $readmeContent -replace "(\|.*$certificate_name\.cer.*\|)", $table_row
             } else {
-              if ($readmeContent[-1] -ne "`n") {
-                 $readmeContent += "`n"
-              }
-              $readmeContent += $table_row + "`n"
+              # Trim any extra newlines at the end and add a single newline before appending the new row
+              $readmeContent = $readmeContent.TrimEnd("`r", "`n")
+              $readmeContent += "`n" + $table_row
             }
             
+            # Recalculate and update the certificate count badge.
             $tableLines = $readmeContent -split "`n" | Where-Object { $_ -match "^\|" }
             $certificateCount = [Math]::Max(0, $tableLines.Count - 2)
             $lines = $readmeContent -split "`n"
-            if ($lines.Count -ge 3) {
-              $lines[2] = "![Certificates](https://img.shields.io/badge/Certificates-$certificateCount-blue)"
+            # Find the line that starts with "![Certificates]" and update it.
+            for ($i=0; $i -lt $lines.Length; $i++) {
+              if ($lines[$i] -like "![Certificates](https://img.shields.io/badge/Certificates-*") {
+                $lines[$i] = "![Certificates](https://img.shields.io/badge/Certificates-$certificateCount-blue)"
+                break
+              }
             }
             $readmeContent = $lines -join "`n"
             
