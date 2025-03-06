@@ -15,3 +15,4 @@ This repository is provided by Philip Marsh to allow users to download certifica
 | 2025-03-06 | Jabra_Direct.cer | [https://jabraxpressonlineprdstor.blob.core.windows.net/jdo/JabraDirectSetup.exe](https://jabraxpressonlineprdstor.blob.core.windows.net/jdo/JabraDirectSetup.exe) |
 
 
+
