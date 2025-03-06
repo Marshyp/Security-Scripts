@@ -131,8 +131,8 @@ jobs:
               $readmeContent = $readmeContent -replace "(\|.*$certificate_name.*\|)", "| $date | $certificate_name |"
           } else {
               # If no existing row, add the table with a new row
-              $tableHeader = "`n| Date       | Certificate Name      |`"
-              $tableSeparator = "`n|------------|-----------------------|`"
+              $tableHeader = "$([char]10)| Date       | Certificate Name      |"
+              $tableSeparator = "$([char]10)|------------|-----------------------|"
               $tableContent = "$tableHeader$tableSeparator$table_row"
               Add-Content -Path README.md -Value $tableContent
           }
