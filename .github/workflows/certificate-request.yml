@@ -137,24 +137,25 @@ jobs:
               Add-Content -Path $env:GITHUB_OUTPUT -Value "CERTIFICATE_FOUND=false"
           }
 
-      - name: No Certificate Found - Comment and Close Issue
-        if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'false'
+      - name: Certificate Extracted - Comment and Close Issue
+        if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'true'
         uses: actions/github-script@v6
         with:
             github-token: ${{ secrets.GITHUB_TOKEN }}
             script: |
-              github.issues.createComment({
+              await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: "Certificate not found on requested software. Issue closed."
+                body: "Certificate extracted and saved to repository. Thank you for your request!"
               });
-              github.issues.update({
+              await github.rest.issues.update({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 state: "closed"
               });
+        
         
 
       - name: Commit Extracted Certificate
@@ -220,22 +221,23 @@ jobs:
             git commit -m "Updated Certificates README with last extraction details" || Write-Host "Nothing to commit for README"
             git push
 
-      - name: Certificate Extracted - Comment and Close Issue
-        if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'true'
+      - name: No Certificate Found - Comment and Close Issue
+        if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'false'
         uses: actions/github-script@v6
         with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            script: |
-                github.issues.createComment({
+              github-token: ${{ secrets.GITHUB_TOKEN }}
+              script: |
+                await github.rest.issues.createComment({
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  body: "Certificate extracted and saved to repository. Thank you for your request!"
+                  body: "Certificate not found on requested software. Issue closed."
                 });
-                github.issues.update({
+                await github.rest.issues.update({
                   issue_number: context.issue.number,
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   state: "closed"
                 });
+          
           
