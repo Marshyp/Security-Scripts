@@ -22,9 +22,7 @@ jobs:
         shell: powershell  
         run: |  
           # Ensure the download_link is on a single line
-          $download_link = @'
-          ${{ github.event.inputs.download_link }}
-          '@
+          $download_link = ${{ github.event.inputs.download_link }}
 
           # Ensure the link is valid and doesn't contain newlines (trim any extra spaces or newlines)
           $download_link = $download_link -replace "`r`n", "" -replace "`n", ""  # Removes newlines
