@@ -162,7 +162,7 @@ jobs:
             $readmeContent = $readmeContent -replace "(\|.*$certificate_name.*\|)", $table_row
           } else {
             # Append the new row to the end of the table
-            $readmeContent += "`n" + $table_row
+            $readmeContent += $table_row
           }
       
           # Write the updated content back to the README.md file in the Certificates folder
