@@ -211,14 +211,13 @@ jobs:
               $readmeContent += "`n" + $table_row
             }
             
-            # Recalculate and update the certificate count badge.
-            $tableLines = $readmeContent -split "`n" | Where-Object { $_ -match "^\|" }
-            $certificateCount = [Math]::Max(0, $tableLines.Count - 2)
+            # Count the number of .cer files in the Certificates folder
+            $cerCount = (Get-ChildItem -Path Certificates -Filter *.cer).Count
+            # Update the badge line by finding the line starting with ![Certificates]
             $lines = $readmeContent -split "`n"
-            # Find the line that starts with "![Certificates]" and update it.
             for ($i=0; $i -lt $lines.Length; $i++) {
               if ($lines[$i] -like "![Certificates](https://img.shields.io/badge/Certificates-*") {
-                $lines[$i] = "![Certificates](https://img.shields.io/badge/Certificates-$certificateCount-blue)"
+                $lines[$i] = "![Certificates](https://img.shields.io/badge/Certificates-$cerCount-blue)"
                 break
               }
             }
