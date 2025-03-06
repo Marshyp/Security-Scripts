@@ -41,7 +41,7 @@ jobs:
           Write-Host "✅ Download complete: $software_name.exe"
 
           # Pass variables to next steps
-          Write-Output "SOFTWARE_NAME=$software_name" >> $GITHUB_OUTPUT
+          Write-Output "SOFTWARE_NAME=$($software_name)" >> $env:GITHUB_OUTPUT
 
       - name: Determine Certificate Name  
         id: cert_name  
