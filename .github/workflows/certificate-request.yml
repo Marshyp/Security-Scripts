@@ -36,9 +36,24 @@ jobs:
               exit 1
           }
           
-          # Adjust the certificate name: replace plus signs with "p", spaces with underscores,
-          # and remove invalid Windows file characters (e.g. : \ / * ? " < > |).
-          $certificateName = $certificateName -replace "\+", "p" -replace " ", "_" -replace '[:\\/*?"<>|]', ""
+          # Sanitize the certificate name:
+          # - Replace plus signs with "p"
+          # - Replace spaces with underscores
+          # - Remove tab characters
+          # - Remove invalid Windows file characters
+          # - Collapse multiple underscores and trim the result
+          $certificateName = $certificateName -replace "\+", "p" `
+                                              -replace " ", "_" `
+                                              -replace "\t", "" `
+                                              -replace '[:\\/*?"<>|]', ""
+          # Optionally, collapse multiple underscores into one
+          $certificateName = $certificateName -replace "_+", "_"
+          # Limit the certificate name to a maximum length (e.g. 50 characters)
+          $maxLength = 50
+          if ($certificateName.Length -gt $maxLength) {
+              $certificateName = $certificateName.Substring(0, $maxLength)
+          }
+          
           Write-Host "Parsed Software Download Link: $downloadLink"
           Write-Host "Parsed Certificate Name: $certificateName"
           
@@ -58,7 +73,6 @@ jobs:
           } else {
               Add-Content -Path $env:GITHUB_OUTPUT -Value "PLATFORM_SUPPORTED=true"
           }
-
 
       - name: Unsupported Platform - Comment and Close Issue
         if: steps.check_platform.outputs.PLATFORM_SUPPORTED == 'false'
