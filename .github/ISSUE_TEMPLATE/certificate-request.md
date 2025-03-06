@@ -1,12 +1,23 @@
 ---
-name: X-Certificate Request
-about: Request extraction of a signing certificate from software
-title: 'X-Certificate Request: '
-labels: certificate-request
----
-
-**Download Link**:  
-
-
-**Certificate Name**:  
-Please provide a name for the certificate. (NOTE: Any “+” characters will be replaced with “p” and spaces with underscores.)
+name: "Certificate Request"
+description: "Request extraction of a signing certificate from software."
+labels: ["certificate-request"]
+type: "request"
+title: "X-Certificate Request: "
+body:
+  - type: input
+    id: software-download-link
+    attributes:
+      label: Software Download Link
+      description: "Please provide the URL for the software download."
+      placeholder: "https://example.com/download.exe"
+    validations:
+      required: true
+  - type: input
+    id: certificate-name
+    attributes:
+      label: Certificate Name
+      description: "Please provide the certificate name. Any '+' will be replaced with 'p' and spaces with underscores."
+      placeholder: "Enter certificate name"
+    validations:
+      required: true

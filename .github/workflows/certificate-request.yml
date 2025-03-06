@@ -20,19 +20,16 @@ jobs:
           $body = "${{ github.event.issue.body }}"
           Write-Host "Issue Body: $body"
           
-          # Remove markdown asterisks
-          $body = $body -replace "\*\*", ""
-          
-          # Extract the Download Link from the issue body
-          if ($body -match "Download Link\s*:\s*(.+)") {
+          # Match "Software Download Link" heading followed by its response on the next line
+          if ($body -match "Software Download Link\s*\n\s*(.+)") {
               $downloadLink = $matches[1].Trim()
           } else {
-              Write-Host "❌ Download Link not found in issue body!"
+              Write-Host "❌ Software Download Link not found in issue body!"
               exit 1
           }
           
-          # Extract the Certificate Name from the issue body
-          if ($body -match "Certificate Name\s*:\s*(.+)") {
+          # Match "Certificate Name" heading followed by its response on the next line
+          if ($body -match "Certificate Name\s*\n\s*(.+)") {
               $certificateName = $matches[1].Trim()
           } else {
               Write-Host "❌ Certificate Name not found in issue body!"
@@ -41,7 +38,7 @@ jobs:
           
           # Adjust the certificate name: replace plus signs with "p" and spaces with underscores.
           $certificateName = $certificateName -replace "\+", "p" -replace " ", "_"
-          Write-Host "Parsed Download Link: $downloadLink"
+          Write-Host "Parsed Software Download Link: $downloadLink"
           Write-Host "Parsed Certificate Name: $certificateName"
           
           # Set outputs for later steps.
@@ -58,32 +55,42 @@ jobs:
           if (-not $certificate_name) { 
             $certificate_name = "downloaded_software" 
           }
+
+          # Determine file extension from the download URL; default to .exe if not found
+          $ext = [System.IO.Path]::GetExtension($download_link)
+          if ([string]::IsNullOrEmpty($ext)) {
+            $ext = ".exe"
+          }
+          $downloadFile = "$certificate_name$ext"
+          Write-Host "Determined file extension: $ext"
+          Write-Host "Download file name will be: $downloadFile"
       
           Write-Host "📥 Downloading software from: $download_link"
           try {
-              Invoke-WebRequest -Uri $download_link -OutFile "$certificate_name.exe" -ErrorAction Stop
+              Invoke-WebRequest -Uri $download_link -OutFile $downloadFile -ErrorAction Stop
           } catch {
               Write-Host "❌ ERROR: Download failed or file missing!"
               Add-Content -Path $env:GITHUB_OUTPUT -Value "DOWNLOAD_SUCCESS=false"
               exit 0
           }
       
-          if (!(Test-Path "$certificate_name.exe")) {
+          if (!(Test-Path $downloadFile)) {
               Write-Host "❌ ERROR: Downloaded file does not exist!"
               Add-Content -Path $env:GITHUB_OUTPUT -Value "DOWNLOAD_SUCCESS=false"
               exit 0
           }
       
-          Write-Host "✅ Download complete: $certificate_name.exe"
+          Write-Host "✅ Download complete: $downloadFile"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "DOWNLOAD_SUCCESS=true"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "SOFTWARE_NAME=$certificate_name"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "SOFTWARE_FILE=$downloadFile"
 
       - name: Invalid Download Link Comment
         if: steps.download.outputs.DOWNLOAD_SUCCESS == 'false'
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -95,10 +102,11 @@ jobs:
         id: extract_certificate
         shell: pwsh
         run: |
-          $software_name = "${{ steps.download.outputs.SOFTWARE_NAME }}"
+          # Use the full file name from the download step
+          $downloadFile = "${{ steps.download.outputs.SOFTWARE_FILE }}"
           $certificate_name = "${{ steps.parse_issue.outputs.CERTIFICATE_NAME }}"
           
-          $exePath = "$software_name.exe"
+          Write-Host "Using downloaded file: $downloadFile"
           $certDir = "Certificates"
           if (-Not (Test-Path $certDir -PathType Container)) { 
               New-Item -ItemType Directory -Path $certDir | Out-Null 
@@ -106,8 +114,8 @@ jobs:
           $certPath = Join-Path -Path $certDir -ChildPath ("$certificate_name.cer")
           $found = $false
           try {
-              Unblock-File -Path $exePath
-              $signature = Get-AuthenticodeSignature -FilePath $exePath
+              Unblock-File -Path $downloadFile
+              $signature = Get-AuthenticodeSignature -FilePath $downloadFile
               Write-Host "Signature Status: $($signature.Status)"
               Write-Host "Signature Details:"
               $signature | Format-List *
@@ -123,10 +131,10 @@ jobs:
                   [System.IO.File]::WriteAllBytes($certPath, $cert.Export("Cert"))
                   Write-Host "✅ Certificate successfully extracted to: $certPath"
               } else {
-                  Write-Host "❌ ERROR: No certificate found in the executable."
+                  Write-Host "❌ ERROR: No certificate found in the file."
               }
-              # Clean up the downloaded executable.
-              Remove-Item -Path $exePath -Force
+              # Clean up the downloaded file.
+              Remove-Item -Path $downloadFile -Force
           } catch {
               Write-Host "❌ An error occurred: $_"
           }
@@ -141,22 +149,20 @@ jobs:
         if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'true'
         uses: actions/github-script@v6
         with:
-            github-token: ${{ secrets.GITHUB_TOKEN }}
-            script: |
-              await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: "Certificate extracted and saved to repository. Thank you for your request!"
-              });
-              await github.rest.issues.update({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: "closed"
-              });
-        
-        
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Certificate extracted and saved to repository. Thank you for your request!"
+            });
+            await github.rest.issues.update({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "closed"
+            });
 
       - name: Commit Extracted Certificate
         if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'true'
@@ -225,19 +231,17 @@ jobs:
         if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'false'
         uses: actions/github-script@v6
         with:
-              github-token: ${{ secrets.GITHUB_TOKEN }}
-              script: |
-                await github.rest.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: "Certificate not found on requested software. Issue closed."
-                });
-                await github.rest.issues.update({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  state: "closed"
-                });
-          
-          
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Certificate not found on requested software. Issue closed."
+            });
+            await github.rest.issues.update({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "closed"
+            });
