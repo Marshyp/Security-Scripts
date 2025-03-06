@@ -1,9 +1,8 @@
 ---
 name: "Certificate Request"
-title: "X-Certificate Request: "
 description: "Request extraction of a signing certificate from software."
+title: "X-Certificate Request: "
 labels: ["certificate-request"]
-type: "Enhancement"
 body:
   - type: input
     id: software-download-link
