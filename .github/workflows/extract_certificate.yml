@@ -47,7 +47,7 @@ jobs:
           $envFile = "$env:GITHUB_ENV"
 
           # Write to environment file using proper quoting
-          "SOFTWARE_NAME=$software_name" | Out-File -FilePath $envFile -Append -Encoding utf8
+          Write-Host "SOFTWARE_NAME=" + $software_name | Out-File -FilePath $envFile -Append -Encoding utf8
 
 
       - name: Determine Certificate Name  
