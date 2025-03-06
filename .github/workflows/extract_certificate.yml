@@ -22,7 +22,9 @@ jobs:
         shell: powershell  
         run: |  
           # Ensure the download_link is on a single line
-          $download_link = "${{ github.event.inputs.download_link }}"
+          $download_link = @'
+          ${{ github.event.inputs.download_link }}
+          '@
 
           # Ensure the link is valid and doesn't contain newlines (trim any extra spaces or newlines)
           $download_link = $download_link -replace "`r`n", "" -replace "`n", ""  # Removes newlines
@@ -42,8 +44,8 @@ jobs:
           } 
            
           Write-Host "✅ Download complete: $software_name.exe" 
-           
-          echo "SOFTWARE_NAME=$software_name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 
+          $envFile = $env:GITHUB_ENV 
+          echo "SOFTWARE_NAME=$software_name" | Out-File -FilePath $envFile -Append -Encoding utf8 
 
       - name: Determine Certificate Name  
         id: cert_name  
