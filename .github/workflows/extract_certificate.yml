@@ -77,20 +77,31 @@ jobs:
 
           $certPath = Join-Path -Path $certDir -ChildPath $certificate_name
 
-          try { 
-              Unblock-File -Path $exePath
-              $cert = (Get-AuthenticodeSignature -FilePath $exePath).SignerCertificate 
-              if ($cert) { 
-                  $cert.Export("Cert") | Set-Content -Path $certPath -Encoding Byte 
-                  Write-Host "✅ Certificate successfully extracted to: $certPath" 
-              } else { 
-                  Write-Host "❌ ERROR: No certificate found in the executable." 
-                  exit 1 
-              } 
-          } catch { 
-              Write-Host "❌ An error occurred: $_" 
-              exit 1 
-          } 
+          try {
+                Unblock-File -Path $exePath
+                $signature = Get-AuthenticodeSignature -FilePath $exePath
+                Write-Host "Signature Status: $($signature.Status)"
+                Write-Host "Signature Details:"
+                $signature | Format-List *
+                
+                if ($signature.SignerCertificate) {
+                    $cert = $signature.SignerCertificate
+                } elseif ($signature.TimeStampSignerCertificate) {
+                    $cert = $signature.TimeStampSignerCertificate
+                }
+                
+                if ($cert) {
+                    $cert.Export("Cert") | Set-Content -Path $certPath -Encoding Byte
+                    Write-Host "✅ Certificate successfully extracted to: $certPath"
+                } else {
+                    Write-Host "❌ ERROR: No certificate found in the executable."
+                    exit 1
+                }
+            } catch {
+                Write-Host "❌ An error occurred: $_"
+                exit 1
+            }
+
 
       - name: Commit Extracted Certificate  
         shell: pwsh 
