@@ -136,8 +136,8 @@ jobs:
             $horizontal = "---`n"
             $badge = "![Certificates](https://img.shields.io/badge/Certificates-0-blue)`n `n"
             $description = "This repository is provided by Philip Marsh to allow users to download certificates and provision their own certificates to the repository using the issue template for use in Microsoft Defender for Endpoint to allow or block certificates as appropriate.`n `n"
-            $tableHeader = "| Date       | Title of certificate | Download link of software |`n `n"
-            $tableSeparator = "|------------|----------------------|---------------------------|`n `n"
+            $tableHeader = "| Date       | Title of certificate | Download link of software |`n"
+            $tableSeparator = "|------------|----------------------|---------------------------|`n"
             $initialContent = $header + $horizontal + $badge + $description + $horizontal + $tableHeader + $tableSeparator
             Set-Content -Path $readmePath -Value $initialContent
           }
