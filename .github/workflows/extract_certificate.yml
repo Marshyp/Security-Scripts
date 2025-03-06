@@ -78,6 +78,7 @@ jobs:
           $certPath = Join-Path -Path $certDir -ChildPath $certificate_name
 
           try { 
+              Unblock-File -Path $exePath
               $cert = (Get-AuthenticodeSignature -FilePath $exePath).SignerCertificate 
               if ($cert) { 
                   $cert.Export("Cert") | Set-Content -Path $certPath -Encoding Byte 
