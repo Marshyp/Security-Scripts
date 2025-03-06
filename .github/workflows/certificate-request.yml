@@ -141,19 +141,21 @@ jobs:
         if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'false'
         uses: actions/github-script@v6
         with:
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "Certificate not found on requested software. Issue closed."
-            });
-            github.issues.update({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "closed"
-            });
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+              github.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: "Certificate not found on requested software. Issue closed."
+              });
+              github.issues.update({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: "closed"
+              });
+        
 
       - name: Commit Extracted Certificate
         if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'true'
@@ -222,16 +224,18 @@ jobs:
         if: steps.extract_certificate.outputs.CERTIFICATE_FOUND == 'true'
         uses: actions/github-script@v6
         with:
-          script: |
-            github.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "Certificate extracted and saved to repository. Thank you for your request!"
-            });
-            github.issues.update({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: "closed"
-            });
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+            script: |
+                github.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: "Certificate extracted and saved to repository. Thank you for your request!"
+                });
+                github.issues.update({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  state: "closed"
+                });
+          
