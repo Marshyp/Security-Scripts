@@ -36,8 +36,9 @@ jobs:
               exit 1
           }
           
-          # Adjust the certificate name: replace plus signs with "p" and spaces with underscores.
-          $certificateName = $certificateName -replace "\+", "p" -replace " ", "_"
+          # Adjust the certificate name: replace plus signs with "p", spaces with underscores,
+          # and remove invalid Windows file characters (e.g. : \ / * ? " < > |).
+          $certificateName = $certificateName -replace "\+", "p" -replace " ", "_" -replace "[:\\/*?\"<>|]", ""
           Write-Host "Parsed Software Download Link: $downloadLink"
           Write-Host "Parsed Certificate Name: $certificateName"
           
