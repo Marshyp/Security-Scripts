@@ -7,6 +7,4 @@ This repository is provided by Philip Marsh to allow users to download certifica
 
 | Date       | Title of certificate | Download link of software |
 |------------|----------------------|---------------------------|
-
-
 | 2025-03-06 | Zoom.cer | [https://zoom.us/client/6.3.11.60501/ZoomInstallerFull.exe?archType=x64](https://zoom.us/client/6.3.11.60501/ZoomInstallerFull.exe?archType=x64) |
