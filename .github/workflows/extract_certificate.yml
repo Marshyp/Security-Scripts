@@ -22,21 +22,21 @@ jobs:
         shell: powershell  
         run: |  
           # Ensure the download_link is on a single line
-          $download_link = ${{ github.event.inputs.download_link }}  
-          
+          $download_link = "${{ github.event.inputs.download_link }}"
+
           # Ensure the link is valid and doesn't contain newlines (trim any extra spaces or newlines)
           $download_link = $download_link -replace "`r`n", "" -replace "`n", ""  # Removes newlines
           
-          $software_name = ${{ github.event.inputs.certificate_name }}
+          $software_name = "${{ github.event.inputs.certificate_name }}"
            
           if (-not $software_name) { 
             $software_name = "downloaded_software" 
           }
            
           Write-Host "📥 Downloading software from: $download_link" 
-          Invoke-WebRequest -Uri $download_link -OutFile $software_name.exe"
+          Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
            
-          if (!(Test-Path $software_name.exe)) {  
+          if (!(Test-Path "$software_name.exe")) {  
             Write-Host "❌ ERROR: Download failed or file missing!"  
             exit 1  
           } 
