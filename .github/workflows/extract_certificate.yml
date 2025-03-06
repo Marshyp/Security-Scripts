@@ -19,8 +19,8 @@ jobs:
 
       - name: Download Software  
         id: download  
-        shell: powershell  
-        run: |  
+        shell: pwsh  
+        run: |
           # Retrieve user inputs
           $download_link = "${{ github.event.inputs.download_link }}"
           $software_name = "${{ github.event.inputs.certificate_name }}"
@@ -29,20 +29,21 @@ jobs:
           if (-not $software_name) { 
             $software_name = "downloaded_software" 
           }
-
-          Write-Host "📥 Downloading software from: $download_link" 
+      
+          Write-Host "📥 Downloading software from: $download_link"
           Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
-
-          if (!(Test-Path "$software_name.exe")) {  
-            Write-Host "❌ ERROR: Download failed or file missing!"  
-            exit 1  
-          } 
-
+      
+          if (!(Test-Path "$software_name.exe")) {
+            Write-Host "❌ ERROR: Download failed or file missing!"
+            exit 1
+          }
+      
           Write-Host "✅ Download complete: $software_name.exe"
-
+      
           # Pass variables to next steps
           $line = "SOFTWARE_NAME=$software_name"
-          Add-Content -Path "$env:GITHUB_OUTPUT" -Value $line
+          Write-Host "GITHUB_OUTPUT: [$env:GITHUB_OUTPUT]"
+          Add-Content -Path ($env:GITHUB_OUTPUT.Trim()) -Value $line
 
 
       - name: Determine Certificate Name  
