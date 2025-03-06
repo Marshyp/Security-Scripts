@@ -43,7 +43,7 @@ jobs:
            
           Write-Host "✅ Download complete: $software_name.exe" 
            
-          echo "SOFTWARE_NAME=$software_name" | Out-File -FilePath "$env:GITHUB_ENV" -Append -Encoding utf8 
+          echo "SOFTWARE_NAME=$software_name" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 
 
       - name: Determine Certificate Name  
         id: cert_name  
@@ -55,7 +55,7 @@ jobs:
           }
            
           Write-Host "🔖 Certificate name set to: $cert_name.cer"  
-          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -FilePath "$env:GITHUB_ENV" -Append -Encoding utf8 
+          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 
 
       - name: Extract Signing Certificate  
         shell: powershell  
