@@ -123,31 +123,38 @@ jobs:
       - name: Update README.md  
         shell: pwsh
         run: |  
-          $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
-          $date = Get-Date -Format "yyyy-MM-dd"  
-          $table_row = "| $date | $certificate_name |"  
-
-          # Read the existing README.md content
-          $readmeContent = Get-Content README.md
-
-          # Check if the certificate already has a row
-          if ($readmeContent -match "\|.*$certificate_name.*\|") {
-              # Update the existing row with the new date
-              $readmeContent = $readmeContent -replace "(\|.*$certificate_name.*\|)", "| $date | $certificate_name |"
-          } else {
-              # If no existing row, add the table with a new row
-              $tableHeader = "$([char]10)| Date       | Certificate Name      |"
-              $tableSeparator = "$([char]10)|------------|-----------------------|"
-              $tableContent = "$tableHeader$tableSeparator$table_row"
-              Add-Content -Path README.md -Value $tableContent
-          }
-
-          # Write the updated content back to README.md
-          Set-Content README.md -Value $readmeContent
-
-          # Add the updated README.md to git and commit
-          git config --local user.name "github-actions"  
-          git config --local user.email "action@github.com"  
-          git add README.md  
-          git commit -m "Updated README with last extraction details"  
-          git push
+            $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
+            $date = Get-Date -Format "yyyy-MM-dd"
+            
+            # Check if README.md exists; if not, create it with a header
+            if (-not (Test-Path README.md)) {
+                Write-Host "README.md not found. Creating a new README.md..."
+                $tableHeader = "| Date       | Certificate Name      |"
+                $tableSeparator = "|------------|-----------------------|"
+                $initialContent = "$tableHeader`n$tableSeparator"
+                Set-Content -Path README.md -Value $initialContent
+            }
+            
+            # Read the existing README.md content
+            $readmeContent = Get-Content README.md -Raw
+        
+            # Define the new row
+            $newRow = "| $date | $certificate_name |"
+            
+            # If a row for this certificate already exists, update it; otherwise, append it.
+            if ($readmeContent -match "\|.*$certificate_name.*\|") {
+                $readmeContent = $readmeContent -replace "(\|.*$certificate_name.*\|)", $newRow
+            } else {
+                $readmeContent += "`n" + $newRow
+            }
+        
+            # Write the updated content back to README.md
+            Set-Content README.md -Value $readmeContent
+        
+            # Stage and commit the changes
+            git config --local user.name "github-actions"
+            git config --local user.email "action@github.com"
+            git add README.md
+            git commit -m "Updated README with last extraction details" || Write-Host "Nothing to commit for README"
+            git push
+        
