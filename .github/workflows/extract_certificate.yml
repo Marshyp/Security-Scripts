@@ -91,7 +91,7 @@ jobs:
                 }
                 
                 if ($cert) {
-                    $cert.Export("Cert") | Set-Content -Path $certPath -Encoding Byte
+                    [System.IO.File]::WriteAllBytes($certPath, $cert.Export("Cert"))
                     Write-Host "✅ Certificate successfully extracted to: $certPath"
                 } else {
                     Write-Host "❌ ERROR: No certificate found in the executable."
