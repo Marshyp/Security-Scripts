@@ -7,8 +7,8 @@ on:
         description: 'Software download link' 
         required: true 
       certificate_name: 
-        description: 'Optional: Name for the certificate (leave blank to use extracted name)' 
-        required: false 
+        description: 'Name for the certificate' 
+        required: true 
 
 jobs: 
   extract_certificate: 
@@ -21,56 +21,58 @@ jobs:
         id: download  
         shell: powershell  
         run: |  
-          # Ensure download_link is properly escaped as a string
+          # Retrieve user inputs
           $download_link = "${{ github.event.inputs.download_link }}"
-
-          # Remove extra newlines or spaces if any exist
-          $download_link = $download_link -replace "`r`n", "" -replace "`n", ""  
-
           $software_name = "${{ github.event.inputs.certificate_name }}"
           
+          # Ensure valid filename
           if (-not $software_name) { 
             $software_name = "downloaded_software" 
           }
-          
+
           Write-Host "📥 Downloading software from: $download_link" 
           Invoke-WebRequest -Uri $download_link -OutFile "$software_name.exe"
-          
+
           if (!(Test-Path "$software_name.exe")) {  
             Write-Host "❌ ERROR: Download failed or file missing!"  
             exit 1  
           } 
-          
-          Write-Host "✅ Download complete: $software_name.exe" 
 
-          # Ensure GITHUB_ENV path is correctly formatted
-          $envFile = "$env:GITHUB_ENV"
+          Write-Host "✅ Download complete: $software_name.exe"
 
-          # Write to environment file using proper quoting
-          Write-Host "SOFTWARE_NAME=" + $software_name | Out-File -FilePath $envFile -Append -Encoding utf8
-
+          # Pass variables to next steps
+          Write-Output "SOFTWARE_NAME=$software_name" >> $GITHUB_OUTPUT
 
       - name: Determine Certificate Name  
         id: cert_name  
         shell: powershell  
         run: |  
-          $cert_name = "${{ github.event.inputs.certificate_name }}"  
+          $software_name = "${{ steps.download.outputs.SOFTWARE_NAME }}"
+          $cert_name = "${{ github.event.inputs.certificate_name }}"
+
           if (-not $cert_name) { 
-            $cert_name = "${{ env.SOFTWARE_NAME }}" 
+            $cert_name = $software_name
           }
-           
+
           Write-Host "🔖 Certificate name set to: $cert_name.cer"  
-          echo "CERTIFICATE_NAME=$cert_name.cer" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8 
+          
+          # Pass variable to next steps
+          Write-Output "CERTIFICATE_NAME=$cert_name.cer" >> $GITHUB_OUTPUT 
 
       - name: Extract Signing Certificate  
         shell: powershell  
         run: |  
-          $exePath = ${{ env.SOFTWARE_NAME }}.exe 
-          $certDir = "Certificates" 
+          $software_name = "${{ steps.download.outputs.SOFTWARE_NAME }}"
+          $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
+          
+          $exePath = "$software_name.exe"
+          $certDir = "Certificates"
+
           if (-Not (Test-Path $certDir -PathType Container)) { 
               New-Item -ItemType Directory -Path $certDir | Out-Null 
           } 
-          $certPath = Join-Path -Path $certDir -ChildPath ${{ env.CERTIFICATE_NAME }}
+
+          $certPath = Join-Path -Path $certDir -ChildPath $certificate_name
 
           try { 
               $cert = (Get-AuthenticodeSignature -FilePath $exePath).SignerCertificate 
@@ -89,19 +91,20 @@ jobs:
       - name: Commit Extracted Certificate  
         shell: powershell  
         run: |  
+          $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
+
           Write-Host "📤 Committing extracted certificate to repository..."  
           git config --local user.name "github-actions"  
           git config --local user.email "action@github.com"  
-          git add "Certificates/${{ env.CERTIFICATE_NAME }}"  
-          git commit -m "Added extracted certificate: ${{ env.CERTIFICATE_NAME }}"  
+          git add "Certificates/$certificate_name"  
+          git commit -m "Added extracted certificate: $certificate_name"  
           git push  
 
       - name: Update README.md  
         shell: powershell  
         run: |  
-          Write-Host "📝 Updating README.md with certificate extraction details..."  
+          $certificate_name = "${{ steps.cert_name.outputs.CERTIFICATE_NAME }}"
           $date = Get-Date -Format "yyyy-MM-dd"  
-          $certificate_name = ${{ env.CERTIFICATE_NAME }} 
           $table_row = "| $date | $certificate_name |"  
 
           # Read the existing README.md content
