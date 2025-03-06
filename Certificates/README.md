@@ -14,3 +14,4 @@ This repository is provided by Philip Marsh to allow users to download certifica
 | 2025-03-06 | Notepadpp_v8.7.7.cer | [https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.7.7/npp.8.7.7.Installer.x64.exe](https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.7.7/npp.8.7.7.Installer.x64.exe) |
 | 2025-03-06 | Jabra_Direct.cer | [https://jabraxpressonlineprdstor.blob.core.windows.net/jdo/JabraDirectSetup.exe](https://jabraxpressonlineprdstor.blob.core.windows.net/jdo/JabraDirectSetup.exe) |
 
+
