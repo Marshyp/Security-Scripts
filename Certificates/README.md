@@ -18,3 +18,4 @@ This repository is provided by Philip Marsh to allow users to download certifica
 | 2025-03-06 | Discord.cer | [https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64](https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64) |
 | 2025-03-06 | Forticlient_VPN.cer | [https://links.fortinet.com/forticlient/win/vpnagent](https://links.fortinet.com/forticlient/win/vpnagent) |
 | 2025-03-06 | Per_user_-_x64_PowerToysUserSetup-0.89.0-x64.exe.cer | [https://github.com/microsoft/PowerToys/releases/download/v0.89.0/PowerToysUserSetup-0.89.0-x64.exe](https://github.com/microsoft/PowerToys/releases/download/v0.89.0/PowerToysUserSetup-0.89.0-x64.exe) |
+| 2025-03-07 | TeamViewer.cer | [https://download.teamviewer.com/download/TeamViewerQS_x64.exe](https://download.teamviewer.com/download/TeamViewerQS_x64.exe) |
