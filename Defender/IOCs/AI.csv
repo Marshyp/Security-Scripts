@@ -1,0 +1,13 @@
+IndicatorType,IndicatorValue,ExpirationTime,Action,Severity,Title,Description,RecommendedActions,RbacGroups,Category,MitreTechniques,GenerateAlert
+DomainName,zapier.com,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,aws.amazon.com,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,deepai.org,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,botpress.com,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,www.digitalocean.com,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,www.quora.com,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,replika.com,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,messengerbot.app,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,mistral.ai,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,auth.mistral.ai,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,mistral.ai,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
+DomainName,docs.mistral.ai,,Block,,Potentially unsanctioned AI,Blocked by MarshyP,,,,,FALSE
